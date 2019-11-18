@@ -11,7 +11,7 @@ void help(char** argv) {
 		<< std::endl;
 }
 
-
+// for test
 int test_main(int argc, char** argv) {
 
 	if (argc != 2) {
