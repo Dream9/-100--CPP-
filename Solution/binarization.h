@@ -4,6 +4,7 @@
 #include"Solution/solution.h"
 
 #include<opencv2/highgui.hpp>
+#include<opencv2/imgproc.hpp>
 
 namespace digital {
 
@@ -16,9 +17,9 @@ public:
 		getDescriptionHandler().assign("以128作为阈值对彩色图像(8bit)二值化");
 	}
 
-	virtual ~Binarization(){}
+	~Binarization() override{}
 
-	virtual void operator()() {
+	void operator()() override{
 		cv::Mat data = cv::imread(getPath(), 1);
 		if (data.empty()) {
 			dealException(kFileError);
@@ -29,6 +30,12 @@ public:
 		int cols = data.cols;
 
 		cv::Mat img = cv::Mat::zeros(rows, cols, CV_8UC1);
+
+#ifdef USE_OPENCVLIB
+		//使用库函数
+		cv::cvtColor(data, img, cv::COLOR_RGB2GRAY);
+		cv::threshold(img, img, 128, 255, CV_THRESH_BINARY);
+#else
 		auto iter = img.data;
 		for (int i = 0; i < rows; ++i) {
 			for (int j = 0; j < cols; ++j) {
@@ -37,6 +44,7 @@ public:
 				++iter;
 			}
 		}
+#endif
 
 		if (needShowOriginal())
 			show(&data, &img);
