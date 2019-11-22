@@ -4,8 +4,9 @@
 //#include"Solution/grayscale.h"
 //#include"Solution/binarization.h"
 //#include"Solution/otsu.h"
-#include"Solution/reverse_hue.h"
-#include"Solution/reduce_color.h"
+//#include"Solution/reverse_hue.h"
+//#include"Solution/reduce_color.h"
+#include"Solution/mean_pooling.h"
 
 using namespace digital;
 int main(){
@@ -29,9 +30,14 @@ int main(){
 	//				  true);
 	//Solve(rh005);
 
-	ReduceColor rc006("F:/yzhh/数字图像处理100问及解答/Question_01_10/imori.jpg",
+	//ReduceColor rc006("F:/yzhh/数字图像处理100问及解答/Question_01_10/imori.jpg",
+	//				  true);
+	//Solve(rc006);
+	
+	MeanPooling mp007("F:/yzhh/数字图像处理100问及解答/Question_01_10/imori.jpg", 8,
 					  true);
-	Solve(rc006);
+	Solve(mp007);
+
 
 
 }

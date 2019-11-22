@@ -4,6 +4,7 @@
 
 namespace digital {
 
+//brief:
 void ReduceColor::operator()() {
 	cv::Mat data = cv::imread(getPath(), 1);
 	if (data.empty()) {

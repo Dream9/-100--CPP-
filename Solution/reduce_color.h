@@ -5,6 +5,7 @@
 
 namespace digital {
 
+//brief:¼õÉ«´¦Àí
 class ReduceColor :public Solution {
 public:
 	ReduceColor(const string&path, bool flag = false, const string& name = "ReduceColor")

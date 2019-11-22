@@ -15,7 +15,10 @@ namespace digital {
 enum ErrorCode {
 	kNone,
 	kFileError,
-	kErrorSize,
+	kParameterNotMatch,
+	kFatal,
+	kFatalSys,
+	kCodeSize,
 };
 
 //brief:处理出错信息

@@ -4,6 +4,7 @@
 
 namespace digital {
 
+//brief：调整H分量实现反转
 class ReverseHue :public Solution {
 public:
 	ReverseHue(const string& path, bool flag = false, const string& name = "RerverseHue")

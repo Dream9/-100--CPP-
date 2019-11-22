@@ -7,6 +7,7 @@ static const double k2PI = kPI * 2;
 
 namespace digital {
 
+//brief:ÑÕÉ«·´Ïà
 void ReverseHue::operator()() {
 	cv::Mat data = cv::imread(getPath(), 1);
 
