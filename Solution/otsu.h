@@ -1,7 +1,7 @@
 #ifndef _SOLUTION_OTSU_H_
 #define _SOLUTION_OTSU_H_
 
-#include"Solution/solution.h"''
+#include"Solution/solution.h"
 
 namespace digital {
 

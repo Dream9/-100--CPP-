@@ -23,7 +23,7 @@ void ReduceColor::operator()() {
 	}
 
 	const int N = 256 / 4;//减少比例
-	const int bit = log2(N);//舍弃低位部分
+	const int bit = static_cast<int>(log2(N));//舍弃低位部分
 	for (int i = 0; i < size.height; ++i) {
 		auto iter = data.data + step * i;
 		auto cur = img.data + step * i;
@@ -35,9 +35,9 @@ void ReduceColor::operator()() {
 			//cur[1] = *(iter+1) / N * N + (N >> 1);
 			//cur[2] = *(iter+2) / N * N + (N >> 1);
 
-			cur[0] = (*iter >> bit) << bit + (N >> 1);
-			cur[1] = (*(iter+1) >> bit) << bit + (N >> 1);
-			cur[2] = (*(iter+2) >> bit) << bit + (N >> 1);
+			cur[0] = ((*iter >> bit) << bit) + (N >> 1);
+			cur[1] = ((*(iter+1) >> bit) << bit) + (N >> 1);
+			cur[2] = ((*(iter+2) >> bit) << bit) + (N >> 1);
 
 			cur += 3;
 			iter += 3;

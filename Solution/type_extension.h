@@ -21,6 +21,8 @@ enum ErrorCode {
 	kCodeSize,
 };
 
+const double k_PI = 3.141592653;
+
 //brief:处理出错信息
 void dealException(ErrorCode code);
 

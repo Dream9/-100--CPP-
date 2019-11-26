@@ -79,21 +79,21 @@ void ReverseHue::rgb2hsi_(uint8_t r, uint8_t g, uint8_t b, double& h, double& s,
 //brief:hsi×ªµ½rgb
 void ReverseHue::hsi2rgb_(double h, double s, double i, uint8_t& r, uint8_t& g, uint8_t& b) {
 	if (h < k2PI / 3) {
-		b = i * (1 - s);
-		r = i * (1 + s * cos(h) / cos(kPI / 3 - h));
-		g = 3 * i - r - b;
+		b = static_cast<int>(i * (1 - s));
+		r = static_cast<int>(i * (1 + s * cos(h) / cos(kPI / 3 - h)));
+		g = static_cast<int>(3 * i - r - b);
 	}
 	else if (h < k2PI * 2 / 3) {
 		h -= k2PI / 3;
-		r = i * (1 - s);
-		g = i * (1 + s * cos(h) / cos(kPI / 3 - h));
-		b = 3 * i - r - g;
+		r = static_cast<int>(i * (1 - s));
+		g = static_cast<int>(i * (1 + s * cos(h) / cos(kPI / 3 - h)));
+		b = static_cast<int>(3 * i - r - g);
 	}
 	else{
 		h -= k2PI * 2 / 3;
-		g = i * (1 - s);
-		b = i * (1 + s * cos(h) / cos(kPI / 3 - h));
-		r = 3 * i - g - b;
+		g = static_cast<int>(i * (1 - s));
+		b = static_cast<int>(i * (1 + s * cos(h) / cos(kPI / 3 - h)));
+		r = static_cast<int>(3 * i - g - b);
 	}
 }
 
