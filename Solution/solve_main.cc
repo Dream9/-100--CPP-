@@ -9,9 +9,10 @@
 //#include"Solution/mean_pooling.h"
 //#include"Solution/max_pooling.h"
 //#include"Solution/gaussian_filter.h"
-#include"Solution/median_blur.h"
+//#include"Solution/median_blur.h"
 
-#include"Solution/mean_blur.h"
+//#include"Solution/mean_blur.h"
+#include"Solution/motion_blur.h"
 
 #ifdef _WIN32
 #include<direct.h>
@@ -22,17 +23,17 @@
 using namespace digital;
 
 const char* datapath ="F:/yzhh/VS2017pro/DigitalImageProcess/data/";
-#define CHECK_ZERO(x) if((x))\
+#define CHECK_ZERO(x,y) if((x))\
                  {\
-                      perror("Fatal error");\
+                      perror("Fatal error:"#y);\
                       exit(EXIT_FAILURE);\
                  }
 int main(){
 
 #ifdef _WIN32
-	CHECK_ZERO(_chdir(datapath));
+	CHECK_ZERO(_chdir(datapath),"change work directory failed.");
 #else
-	CHECK_ZERO(chdir(datapath));
+	CHECK_ZERO(chdir(datapath),"change work directory failed.");
 #endif
 
 	//ChannelSwap cs001("imori.jpg",
@@ -79,10 +80,17 @@ int main(){
 	//				  true);
 	//Solve(mb010);
 	
-	MeanBlur meanb011("imori.jpg", 
-					  5,
+	//MeanBlur meanb011("imori.jpg", 
+	//				  5,
+	//				  true);
+	//Solve(meanb011);
+	
+	MotionBlur motionb012("imori.jpg",
+					  3,
+					  0,
 					  true);
-	Solve(meanb011);
+	Solve(motionb012);
+
 
 }
 

@@ -1,4 +1,4 @@
-
+//brief:提供基本类型和数据的扩展
 
 #ifndef _SOLUTION_TYPES_EXTENSION_H_
 #define _SOLUTION_TYPES_EXTENSION_H_
