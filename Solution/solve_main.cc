@@ -1,18 +1,18 @@
 #include"Solution/solution.h"
 
-//#include"Solution/channel_swap.h"
-//#include"Solution/grayscale.h"
-//#include"Solution/binarization.h"
-//#include"Solution/otsu.h"
-//#include"Solution/reverse_hue.h"
-//#include"Solution/reduce_color.h"
-//#include"Solution/mean_pooling.h"
-//#include"Solution/max_pooling.h"
-//#include"Solution/gaussian_filter.h"
-//#include"Solution/median_blur.h"
+//#include"Solution/001-010/channel_swap.h"
+//#include"Solution/001-010/grayscale.h"
+//#include"Solution/001-010/binarization.h"
+//#include"Solution/001-010/otsu.h"
+//#include"Solution/001-010/reverse_hue.h"
+//#include"Solution/001-010/reduce_color.h"
+//#include"Solution/001-010/mean_pooling.h"
+//#include"Solution/001-010/max_pooling.h"
+//#include"Solution/001-010/gaussian_filter.h"
+//#include"Solution/001-010/median_blur.h"
 
-//#include"Solution/mean_blur.h"
-#include"Solution/motion_blur.h"
+//#include"Solution/011-020/mean_blur.h"
+#include"Solution/011-020/motion_blur.h"
 
 #ifdef _WIN32
 #include<direct.h>
