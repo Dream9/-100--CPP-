@@ -12,7 +12,9 @@
 //#include"Solution/001-010/median_blur.h"
 
 //#include"Solution/011-020/mean_blur.h"
-#include"Solution/011-020/motion_blur.h"
+//#include"Solution/011-020/motion_blur.h"
+#include"Solution/011-020/max_min_filter.h"
+#include"Solution/011-020/differential_filter.h"
 
 #ifdef _WIN32
 #include<direct.h>
@@ -28,12 +30,12 @@ const char* datapath ="F:/yzhh/VS2017pro/DigitalImageProcess/data/";
                       perror("Fatal error:"#y);\
                       exit(EXIT_FAILURE);\
                  }
-int main(){
+int main() {
 
 #ifdef _WIN32
-	CHECK_ZERO(_chdir(datapath),"change work directory failed.");
+	CHECK_ZERO(_chdir(datapath), "change work directory failed.");
 #else
-	CHECK_ZERO(chdir(datapath),"change work directory failed.");
+	CHECK_ZERO(chdir(datapath), "change work directory failed.");
 #endif
 
 	//ChannelSwap cs001("imori.jpg",
@@ -51,7 +53,7 @@ int main(){
 	//Otsu otsu004("imori.jpg",
 	//				  true);
 	//Solve(otsu004);
-	
+
 	//ReverseHue rh005("imori.jpg",
 	//				  true);
 	//Solve(rh005);
@@ -59,40 +61,49 @@ int main(){
 	//ReduceColor rc006("imori.jpg",
 	//				  true);
 	//Solve(rc006);
-	
+
 	//MeanPooling mp007("imori.jpg", 
 	//                8,
 	//				  true);
 	//Solve(mp007);
-	
+
 	//MaxPooling maxp008("imori.jpg", 
 	//                8,
 	//				  true);
 	//Solve(maxp008);
-	
+
 	//GaussianFilter gf009("imori.jpg", 
 	//                1.5,
 	//                5,
 	//				  true);
 	//Solve(gf009);
-	
+
 	//MedianBlur mb010("imori_noise.jpg", 9,
 	//				  true);
 	//Solve(mb010);
-	
+
 	//MeanBlur meanb011("imori.jpg", 
 	//				  5,
 	//				  true);
 	//Solve(meanb011);
-	
-	MotionBlur motionb012("imori.jpg",
-					  3,
-					  0,
-					  true);
-	Solve(motionb012);
 
+	//MotionBlur motionb012("imori.jpg",
+	//				  3,
+	//				  0,
+	//				  true);
+	//Solve(motionb012);
+
+	//MaxMinFilter mmf013("imori.jpg",
+	//				 3,
+	//	             true);
+	//Solve(mmf013);
+
+	DifferentialFilter df014("imori.jpg",
+            		true);
+	Solve(df014);
 
 }
+
 
 
 #undef CHECK_ZERO

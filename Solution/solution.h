@@ -37,8 +37,12 @@ public:
 		return question_name_;
 	}
 	
-	void show(void *);
-	void show(void *, void *);
+	void show(void* fig);
+	void show(void* fig, const string& str);
+	void show(void* fig, void* fig_2);
+	void show(void* fig, void* fig_2, const string& str);
+	void show(void** figs, int len);
+	void show(void** figs, int len, const string& str);
 
 	bool needShowOriginal()const {
 		return show_old_;
