@@ -1,4 +1,4 @@
-#include"Solution/max_pooling.h"
+#include"Solution/001-010/max_pooling.h"
 
 #include<opencv2/highgui.hpp>
 
@@ -22,6 +22,8 @@ void MaxPooling::operator()() {
 		dealException(kParameterNotMatch);
 		return;
 	}
+
+	//FIXME:使用detail::filter2DNonLinear完成以下操作
 
 	cv::Mat img = cv::Mat::zeros(img_size, data.type());
 	auto cur = img.data;

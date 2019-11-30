@@ -30,6 +30,7 @@ private:
 	}
 
 	void getGaussianFilter_(std::vector<std::vector<double>>& arr, double sigma);
+	void getGaussianFilter_(std::vector<double>& arr, double sigma);
 	void reverseArray_(std::vector<std::vector<double>>& arr);
 
 	double sigma_;

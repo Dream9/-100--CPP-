@@ -1,4 +1,4 @@
-#include"Solution/grayscale.h"
+#include"Solution/001-010/grayscale.h"
 
 #include<opencv2/highgui.hpp>
 #include<opencv2/imgproc.hpp>

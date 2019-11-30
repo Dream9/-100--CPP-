@@ -1,4 +1,4 @@
-#include"Solution/reduce_color.h"
+#include"Solution/001-010/reduce_color.h"
 
 #include<opencv2/highgui.hpp>
 
@@ -21,6 +21,9 @@ void ReduceColor::operator()() {
 		step = step * size.height;
 		size.height = 1;
 	}
+
+
+	//FIXME:使用detail::filter2DNonLinear完成以下操作
 
 	const int N = 256 / 4;//减少比例
 	const int bit = static_cast<int>(log2(N));//舍弃低位部分

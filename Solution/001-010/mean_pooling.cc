@@ -1,4 +1,4 @@
-#include"Solution/mean_pooling.h"
+#include"Solution/001-010/mean_pooling.h"
 
 #include<opencv2/highgui.hpp>
 #include<opencv.hpp>
@@ -28,6 +28,9 @@ void MeanPooling::operator()() {
 
 	cv::Mat img(img_size, data.type());
 	const int kN2 = static_cast<int>(win_ * win_);
+
+
+	//FIXME:使用detail::filter2DNonLinear完成以下操作
 
 	auto cur = img.data;
 	for (int i = 0; i < size.height; i += win_) {

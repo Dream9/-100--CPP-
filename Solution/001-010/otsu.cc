@@ -1,4 +1,4 @@
-#include"Solution/otsu.h"
+#include"Solution/001-010/otsu.h"
 
 #include<opencv2/imgproc.hpp>
 #include<opencv2/highgui.hpp>

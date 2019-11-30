@@ -1,4 +1,4 @@
-#include"Solution/channel_swap.h"
+#include"Solution/001-010/channel_swap.h"
 
 
 namespace digital {

@@ -1,4 +1,5 @@
-#include"Solution/gaussian_filter.h"
+#include"Solution/001-010/gaussian_filter.h"
+#include"Solution/base.h"
 
 #include<opencv2/highgui.hpp>
 #include<opencv2/imgproc.hpp>
@@ -25,39 +26,43 @@ void GaussianFilter::operator()() {
 	cv::GaussianBlur(data, img, { win_,win_ }, sigma_, sigma_);
 	
 #else
+	
+	std::vector<double>filter;
+	getGaussianFilter_(filter, sigma_);
+	detail::filter2D(data, img, &filter[0], win_, win_, false, false, (uchar*)nullptr);
 
-	int win = win_;
-	std::vector<std::vector<double>> arr(win, std::vector<double>(win, 0.0));
-	getGaussianFilter_(arr, sigma_);
-	//reverseArray_(arr);//特殊情况，因为高斯函数的对称特性使其反转后的结果不变
+	//FIXME:使用detail::filter2D
+	//以下为原始测试版本
+	//int win = win_;
+	//std::vector<std::vector<double>> arr(win, std::vector<double>(win, 0.0));
+	//getGaussianFilter_(arr, sigma_);
+	////reverseArray_(arr);//特殊情况，因为高斯函数的对称特性使其反转后的结果不变
+	//	const int radius = win >> 1;
 
-	const int radius = win >> 1;
+	//for (int i = radius; i < size.height - radius; ++i) {
+	//	for (int j = radius; j < size.width - radius; ++j) {
+	//		auto cur = img.ptr<uint8_t>(i, j);
+	//		//进行卷积运算
+	//		//becare:此时的滤波核参数已经反转了180
+	//		double sum_r = 0;
+	//		double sum_g = 0;
+	//		double sum_b = 0;
 
+	//		//采用循环展开
+	//		for (int x = 0; x < win; ++x) {
+	//			auto iter = data.ptr<cv::Vec3b>(i + x - radius, j);
+	//			for (int y = 0; y < win; ++y) {
+	//				sum_r += arr[x][y] * iter[y - radius][2];
+	//				sum_g += arr[x][y] * iter[y - radius][1];
+	//				sum_b += arr[x][y] * iter[y - radius][0];
+	//			}
+	//		}
 
-	for (int i = radius; i < size.height - radius; ++i) {
-		for (int j = radius; j < size.width - radius; ++j) {
-			auto cur = img.ptr<uint8_t>(i, j);
-			//进行卷积运算
-			//becare:此时的滤波核参数已经反转了180
-			double sum_r = 0;
-			double sum_g = 0;
-			double sum_b = 0;
-
-			//采用循环展开
-			for (int x = 0; x < win; ++x) {
-				auto iter = data.ptr<cv::Vec3b>(i + x - radius, j);
-				for (int y = 0; y < win; ++y) {
-					sum_r += arr[x][y] * iter[y - radius][2];
-					sum_g += arr[x][y] * iter[y - radius][1];
-					sum_b += arr[x][y] * iter[y - radius][0];
-				}
-			}
-
-			cur[2] = static_cast<uint8_t>(sum_r);
-			cur[1] = static_cast<uint8_t>(sum_g);
-			cur[0] = static_cast<uint8_t>(sum_b);
-		}
-	}
+	//		cur[2] = static_cast<uint8_t>(sum_r);
+	//		cur[1] = static_cast<uint8_t>(sum_g);
+	//		cur[0] = static_cast<uint8_t>(sum_b);
+	//	}
+	//}
 
 #endif
 
@@ -117,7 +122,21 @@ void GaussianFilter::getGaussianFilter_(std::vector<std::vector<double>>& arr, d
 	}
 
 #endif
+}
 
+//brief:为了适应新的detail::filter2D统一接口
+void GaussianFilter::getGaussianFilter_(std::vector<double>& arr1D, double sigma) {
+	std::vector<std::vector<double>> arr(win_, std::vector<double>(win_, 0.0));
+	getGaussianFilter_(arr, sigma_);
+
+	arr1D.resize(win_*win_);
+	auto iter = arr1D.begin();
+
+	for (const auto& vec : arr) {
+		for (double value : vec) {
+			*iter++ = value;
+		}
+	}
 }
 
 //brief:
