@@ -1,4 +1,4 @@
-#include"Solution/motion_blur.h"
+#include"Solution/011-020/motion_blur.h"
 #include"Solution/base.h"
 
 #include<opencv2/highgui.hpp>
@@ -16,7 +16,7 @@ void MotionBlur::operator()() {
 		return;
 	}
 
-	cv::Mat img = data.clone();
+	cv::Mat img;
 
 #ifdef USE_OPENCVLIB
 	
@@ -37,7 +37,7 @@ void MotionBlur::operator()() {
 	getMotionBlurCoefficient_(&filter[0]);
 
 	//使用统一的卷积运算
-	detail::filter2D<int, uchar>(&data, &img, &filter[0], win_, win_,true, false, nullptr);
+	detail::filter2D<int, uchar>(data, img, &filter[0], win_, win_,true, false, nullptr);
 
 #endif
 
