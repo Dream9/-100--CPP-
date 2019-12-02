@@ -12,10 +12,12 @@ using std::string;
 
 namespace digital {
 
+//brief:错误代码
 enum ErrorCode {
 	kNone,
 	kFileError,
 	kParameterNotMatch,
+	kImshowTypeIsNotCV8U,
 	kFatal,
 	kFatalSys,
 	kCodeSize,
@@ -24,7 +26,8 @@ enum ErrorCode {
 const double k_PI = 3.141592653;
 
 //brief:处理出错信息
-void dealException(ErrorCode code);
+#define dealException(x) __dealException(x,__FILE__, __LINE__, __FUNCTION__)
+void __dealException(ErrorCode code, const char* file, int line, const char* func);
 
 }
 

@@ -7,8 +7,70 @@
 //#include<memory>
 #include<vector>
 
+
 //brief:对外隐藏
 namespace detail {
+
+//brief:萃取型别,作用是根据depth确定数据型别
+//becare;要求depth编译时期确定
+template<int depth>
+class GetTypeFormDepth {
+public:
+	typedef int ValueType;
+};
+
+//参照
+//#define CV_8U   0
+//#define CV_8S   1
+//#define CV_16U  2
+//#define CV_16S  3
+//#define CV_32S  4
+//#define CV_32F  5
+//#define CV_64F  6
+//#define CV_USRTYPE1 7
+
+template<>
+class GetTypeFormDepth<0> {
+public:
+	typedef uint8_t ValueType;
+};
+
+template<>
+class GetTypeFormDepth<1> {
+public:
+	typedef int8_t ValueType;
+};
+
+template<>
+class GetTypeFormDepth<2> {
+public:
+	typedef uint16_t ValueType;
+};
+
+template<>
+class GetTypeFormDepth<3> {
+public:
+	typedef int16_t ValueType;
+};
+
+template<>
+class GetTypeFormDepth<4> {
+public:
+	typedef int32_t ValueType;
+};
+
+template<>
+class GetTypeFormDepth<5> {
+public:
+	typedef float ValueType;
+};
+
+template<>
+class GetTypeFormDepth<6> {
+public:
+	typedef double ValueType;
+};
+
 
 //brief:统一的删除器,为了应对c++17之前的shared_ptr连个delete[]都需要显示传入的缺陷
 template<typename Ty>
@@ -31,6 +93,7 @@ void flipFilter(Ty* arr, int N2) {
 //brief:二维矩阵卷积
 //parameter: src：原始Mat 
 //         dst:目标Mat 
+//         ddepth:目标像素深度
 //	       arr_filter:滤波器参数，二维的滤波器需要转换成具有连续内存分布的一维形式
 //         win_c/win_r:窗口大小，
 //         need_normalize是否需要归一化滤波器参数
@@ -40,21 +103,23 @@ void flipFilter(Ty* arr, int N2) {
 //       本函数提供了统一卷积计算，因此没有针对filter数据特点进行任何优化，如需优化，需自行另外实现
 //       本函数允许最大通道数量为4(rgba)
 //TODO:当滤波核很大时采用DFT计算，参考opencv源码
-template<typename Ty, typename Ky>
+template<int sdepth, int ddepth, typename Ty = int>
 void filter2D(cv::Mat& data, 
 	cv::Mat& img, 
 	Ty* arr_filter, 
 	int win_c, 
 	int win_r, 
 	bool need_normalize = true, 
-	bool need_flip = true, 
-	Ky* =nullptr)
+	bool need_flip = true)
 {
 	//FIXME:通过实现反向的DataType来取消Ky的显示说明
-	Ty* filter = arr_filter;
-	img.create(data.size(), data.type());
+	typedef GetTypeFormDepth<ddepth>::ValueType Dy;
+	typedef GetTypeFormDepth<sdepth>::ValueType Sy;
 
-	assert(data.type() == img.type());
+	Ty* filter = arr_filter;
+	img.create(data.size(), CV_MAKETYPE(ddepth, data.channels()));
+
+	//assert(data.type() == img.type());
 	assert(data.size() == img.size());
 
 	cv::Size old_size = data.size();
@@ -63,6 +128,7 @@ void filter2D(cv::Mat& data,
 	const int kWinSize = win_c * win_r;
 	const int kChannels = static_cast<int>(data.channels());
 	const int kElemSize = static_cast<int>(data.elemSize());
+	const int kImgElemSize = static_cast<int>(img.elemSize());
 	const int kStep = static_cast<int>(data.step[0]);
 	Ty rgba[4];
 
@@ -95,13 +161,13 @@ void filter2D(cv::Mat& data,
 			//单个窗口计算
 			memset(rgba, 0, sizeof rgba);
 
-			auto iter = static_cast<Ky*>(cursor);
+			auto iter = static_cast<Sy*>(cursor);
 			int n = 0;
 			for (int x = 0; x < win_r; ++x) {
 				auto tmp = iter;
 				for (int y = 0; y < win_c; ++y) {
 					for (int cn = 0; cn < kChannels; ++cn) {
-						rgba[cn] += tmp[cn] * filter[n];
+						rgba[cn] += cv::saturate_cast<Ty>(tmp[cn] * filter[n]);
 					}
 
 					tmp += kElemSize;
@@ -110,13 +176,17 @@ void filter2D(cv::Mat& data,
 				iter += kStep;
 			}
 
-			Ky* cur_tmp = static_cast<Ky*>(cur);
+			Dy* cur_tmp = static_cast<Dy*>(static_cast<void*>(cur));
+
+			//for test
+			assert(cur == img.ptr<uchar>(i - offset_r, j - offset_c));
+
 			for (int cn = 0; cn < kChannels; ++cn) {
 				//FIXME:防止数据溢出
 				//cur_tmp[cn] = static_cast<Ky>(rgba[cn] * kFactor);
-				cur_tmp[cn] = cv::saturate_cast<Ky>(rgba[cn] * kFactor);
+				cur_tmp[cn] = cv::saturate_cast<Dy>(rgba[cn] * kFactor);
 			}
-			cur += kElemSize;
+			cur += kImgElemSize;
 			cursor += kElemSize;
 		}
 	}

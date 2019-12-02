@@ -44,6 +44,8 @@ public:
 	void show(void** figs, int len);
 	void show(void** figs, int len, const string& str);
 
+	void calibration(void*);
+
 	bool needShowOriginal()const {
 		return show_old_;
 	}
@@ -62,6 +64,15 @@ private:
 void Solve(Solution& solution);
 //brief:仅用于测试
 void __MatrixTest(void* Mat1, void* Mat2);
+
+//brief:debug时提醒图像显示类型匹配
+inline void assert_imshow_type(int depth) {
+#ifndef NDEBUG
+	if (depth != 0) {
+		dealException(kImshowTypeIsNotCV8U);
+	}
+#endif
+}
 
 }
 

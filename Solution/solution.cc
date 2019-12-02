@@ -12,6 +12,8 @@ void __merger(cv::Mat& src1, cv::Mat& src2, cv::Mat& dst);
 
 inline void __show_without_destroy(const string& name, void* figure);
 
+void __exit_failure();
+
 }
 
 namespace digital {
@@ -57,6 +59,8 @@ void Solution::show(void* figure, void* figure_2, const string& str) {
 //brief:展示多幅数据
 //parameter:figs：指向Mat*的指针数组
 //          len：数组长度
+//becare:这里隐含着要求所有图像的type一致
+//TODO：允许不同type的同时显示
 void Solution::show(void** figs, int len) {
 	show(figs, len, question_name_);
 }
@@ -71,7 +75,8 @@ void Solution::show(void** figs, int len, const string& str) {
 		cv::Mat* cur = static_cast<cv::Mat*>(figs[i]);
 		if (cur->type() != type) {
 			dealException(kParameterNotMatch);
-			exit(EXIT_FAILURE);
+			//FIXME: 或者抛出错误？
+			__exit_failure();
 		}
 #endif
 
@@ -102,31 +107,46 @@ void Solve(Solution& solution) {
 	solution();
 }
 
+#define DIGITAL_ERROR_FORMAT "[%s:%d:%s]"
 //brief:处理错误
-void dealException(ErrorCode code) {
+//parameter:code:错误代码
+//          file:文件名
+//          line:行号
+//          func：函数名
+void __dealException(
+	ErrorCode code,
+	const char* file, 
+	int line,
+	const char* func) 
+{
 	switch (code) {
 	case kNone:
 	case kCodeSize:
 		return;
 		break;
 	case kFileError:
-		fprintf(stderr, "File may be broken or not exist.\r\n");
+		fprintf(stderr, DIGITAL_ERROR_FORMAT "File may be broken or not exist.\r\n", file, line, func);
 		break;
 	case kParameterNotMatch:
-		fprintf(stderr, "Parameter does not match.\r\n");
+		fprintf(stderr, DIGITAL_ERROR_FORMAT "Parameter does not match.\r\n", file, line, func);
+		break;
+	case kImshowTypeIsNotCV8U:
+		fprintf(stderr, DIGITAL_ERROR_FORMAT "Warning:you should make sure that data range is right.\r\n", file, line, func);
 		break;
 	case kFatal:
-		fprintf(stderr, "Inner fatal error occured.\r\n");
-		exit(EXIT_FAILURE);
+		fprintf(stderr, DIGITAL_ERROR_FORMAT "Inner fatal error occured.\r\n", file, line, func);
+		__exit_failure();
 		break;
 	case kFatalSys:
+		fprintf(stderr, DIGITAL_ERROR_FORMAT, file, line, func);
 		perror("System error.\r\n");
-		exit(EXIT_FAILURE);
+		__exit_failure();
 		break;
 	default:
-		printf("Unknown error.\n");
+		printf(DIGITAL_ERROR_FORMAT "Unknown error.\n", file, line, func);
 	}
 }
+#undef DIGITAL_ERROR_FORMAT
 
 //brief:just for test , never be used outside
 void __MatrixTest(void* first, void* second) {
@@ -138,8 +158,8 @@ void __MatrixTest(void* first, void* second) {
 
 	for (int i = 0; i < rows; ++i) {
 		for (int j = 0; j < cols; ++j) {
-			std::cout << img.at<cv::Vec3b>(i, j) << "---"
-					  << out.at<cv::Vec3b>(i, j)
+			std::cout << img.at<uint8_t>(i, j) << ":"
+					  << out.at<short>(i, j)
 				      << "\r\n";
 		}
 		// you can check this row here
@@ -172,9 +192,23 @@ void __show_without_destroy(const string& name, void* figure) {
 	
 	//or AUTOSIZE?
 	cv::namedWindow(name, cv::WINDOW_NORMAL);
+	//cv::namedWindow(name, cv::WINDOW_AUTOSIZE);
 
-	//about imshow:If the window was not created before this function, it is assumed creating a window with cv::WINDOW_AUTOSIZE.
+	//beacare:imshow针对非8位深度的图像会做一个！！固定！！比例的伸缩！！
+    //imshow:If the window was not created before this function, it is assumed creating a window with cv::WINDOW_AUTOSIZE.
+	//  -If the image is 8 - bit unsigned, it is displayed as is.
+	//	- If the image is 16 - bit unsigned or 32 - bit integer, the pixels are divided by 256. That is, the
+	//	value range[0, 255 * 256] is mapped to[0, 255].
+	//	- If the image is 32 - bit or 64 - bit floating - point, the pixel values are multiplied by 255. That is, the
+    //	value range[0, 1] is mapped to[0, 255].
 	cv::imshow(name, *out);
+}
+
+void __exit_failure() {
+#ifdef _MSC_VER
+	system("pause");
+#endif
+	exit(EXIT_FAILURE);
 }
 
 }//!namespace
