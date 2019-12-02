@@ -55,11 +55,15 @@ void DifferentialFilter::operator()() {
 
 	//计算x方向的微分
 	cv::Mat img;
+
 	int filter_x[kWin * kWin] = {
 		0, 0, 0,
 		0,-1, 1,
 		0, 0, 0 };
-	detail::filter2D(data, img, filter_x, kWin, kWin, false, false, (uchar*)nullptr);
+	//如果保留负值，然后重新标定，图像应该位于灰色调
+	detail::filter2D<CV_8U, CV_16S, int>(data, img, filter_x, kWin, kWin, false, false);
+	//重新calibration范围
+	img.convertTo(img, CV_8UC1, 1.0, 128);
 	//_SHOW(data, img);
 	
 	//计算y方向的微分
@@ -68,8 +72,10 @@ void DifferentialFilter::operator()() {
 		0, 0, 0,
 		0,-1, 0,
 		0, 1, 0 };
-	detail::filter2D(data, img_y, filter_y, kWin, kWin, false, true, (uchar*)nullptr);
+	//如果不保留负值，图像应该位于黑色调
+	detail::filter2D<CV_8U, CV_8U, int>(data, img_y, filter_y, kWin, kWin, false, false);
 	//_SHOW(data, img_y);
+
 
 	//近似计算梯度
 	cv::Mat gradient = img + img_y;

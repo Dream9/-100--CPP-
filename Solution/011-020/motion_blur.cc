@@ -37,7 +37,7 @@ void MotionBlur::operator()() {
 	getMotionBlurCoefficient_(&filter[0]);
 
 	//使用统一的卷积运算
-	detail::filter2D<int, uchar>(data, img, &filter[0], win_, win_,true, false, nullptr);
+	detail::filter2D<CV_8U, CV_8U, int>(data, img, &filter[0], win_, win_,true, false);
 
 #endif
 
