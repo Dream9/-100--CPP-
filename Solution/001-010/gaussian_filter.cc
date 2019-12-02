@@ -29,7 +29,7 @@ void GaussianFilter::operator()() {
 	
 	std::vector<double>filter;
 	getGaussianFilter_(filter, sigma_);
-	detail::filter2D(data, img, &filter[0], win_, win_, false, false, (uchar*)nullptr);
+	detail::filter2D<CV_8U,CV_8U,double>(data, img, &filter[0], win_, win_, false, false);
 
 	//FIXME:使用detail::filter2D
 	//以下为原始测试版本
