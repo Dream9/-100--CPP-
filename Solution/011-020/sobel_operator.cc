@@ -1,50 +1,68 @@
 #include"Solution/011-020/sobel_operator.h"
-
 #include"Solution/base.h"
 
 #include<opencv2/highgui.hpp>
 #include<opencv2/imgproc.hpp>
 
-namespace digital {
+#ifndef NDEBUG
+//for test
+#include<vector>
+#endif
 
-const int SobelOperator::win_ = 3;
+namespace digital {
 
 //brief:Sobel 算子有两个，一个是检测水平边缘的 ；另一个是检测垂直边缘的 。
 //     与Prewitt算子相比，Sobel算子对于象素的位置的影响做了加权，可以降低边缘模糊程度
+//becare:使用更大的窗口，意味着采取更高的模糊
 void SobelOperator::operator()() {
-	//转为灰度并降噪
+    //转为灰度并降噪
 	cv::Mat data = cv::imread(getPath(), cv::IMREAD_GRAYSCALE);
 	if(data.empty()) {
 		dealException(kFileError);
 		return;
 	}
 	cv::GaussianBlur(data, data, cv::Size(3, 3), 0.0, 0.0);
+	cv::Mat img_x;
+	cv::Mat img_y;
 
 #ifdef USE_OPENCVLIB
 
 	//此外内部还提供一种Scharr的实现，其提供更高精度的一阶微分近似，是对Sobel的优化
-	cv::Mat img_x;
-	cv::Sobel(data, img_x, CV_16S, 1, 0, 3);
+	cv::Sobel(data, img_x, CV_16S, 1, 0, win_);
 	//or use cv::filter2D
 	
-	cv::Mat img_y;
-	cv::Sobel(data, img_y, CV_16S, 0, 1, 3);
+	cv::Sobel(data, img_y, CV_16S, 0, 1, win_);
 
 #else
-	//此处对于负值直接取为0，并没有重新标定
-	int filter_x[win_*win_] = {
-		-1, 0, 1,
-		-2, 0, 2,
-		-1, 0, 1 };
-	cv::Mat img_x;
-	detail::filter2D<CV_8U, CV_16S, int>(data, img_x, filter_x, win_, win_, false, false);
+	//最初采用固定的空间滤波核的实现方式
+	//int filter_x[win_*win_] = {
+	//	-1, 0, 1,
+	//	-2, 0, 2,
+	//	-1, 0, 1 };
+	//detail::filter2D<CV_8U, CV_16S, int>(data, img_x, filter_x, win_, win_, false, false);
+	//
+	//int filter_y[win_*win_] = {
+	//	-1, -2, -1,
+	//	0, 0, 0,
+	//	1, 2, 1 };
+	//detail::filter2D<CV_8U, CV_16S, int>(data, img_y, filter_y, win_, win_, false, false);
 	
-	int filter_y[win_*win_] = {
-		-1, -2, -1,
-		0, 0, 0,
-		1, 2, 1 };
-	cv::Mat img_y;
-	detail::filter2D<CV_8U, CV_16S, int>(data, img_y, filter_y, win_, win_, false, false);
+	//根据窗口大小决定算子
+	//利用函数得到平滑算子
+	cv::Mat smooth_kernel;
+	cv::flip(detail::getSmoothKernel(win_), smooth_kernel, -1);
+	//利用函数得到差分算子
+	cv::Mat diff_kernel;
+	cv::flip(detail::getSobelDifference(win_), diff_kernel, -1);
+
+#ifndef NDEBUG
+	//for test
+	std::vector<int> v = std::vector<int>(smooth_kernel);
+	std::vector<int> v2 = std::vector<int>(diff_kernel);
+#endif
+
+	cv::sepFilter2D(data, img_x, CV_16S, smooth_kernel, diff_kernel.t());
+	cv::sepFilter2D(data, img_y, CV_16S, diff_kernel, smooth_kernel.t());
 
 #endif
 
@@ -53,7 +71,8 @@ void SobelOperator::operator()() {
 	cv::convertScaleAbs(img_y, img_y, 1, 128);
 
 	//近似梯度
-	cv::Mat gradient = img_x + img_y;
+	cv::Mat gradient;
+	cv::addWeighted(img_x, 0.5, img_y, 0.5, 0, gradient);
 
 	assert_imshow_type(gradient.depth());
 
