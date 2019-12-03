@@ -15,7 +15,7 @@
 //#include"Solution/011-020/motion_blur.h"
 //#include"Solution/011-020/max_min_filter.h"
 //#include"Solution/011-020/differential_filter.h"
-//#include"Solution/011-020/sobel_operator.h"
+#include"Solution/011-020/sobel_operator.h"
 #include"Solution/011-020/prewitt_operator.h"
 
 #ifdef _WIN32
@@ -104,9 +104,10 @@ int main() {
     //        		true);
 	//Solve(df014);
 	
-	//SobelOperator so015("imori.jpg",
-    //        		true);
-	//Solve(so015);
+	SobelOperator so015("imori.jpg",
+					5,
+            		true);
+	Solve(so015);
 	
 	PrewittOperator po016("imori.jpg",
             		true);

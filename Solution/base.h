@@ -11,6 +11,13 @@
 //brief:对外隐藏
 namespace detail {
 
+//brief:计算阶乘
+int factorial(int i);
+//brief:获得窗口为win的一维二项式平滑算子列向量
+cv::Mat getSmoothKernel(int win);
+//brief:获得窗口为win的一维sobel差分算子列向量
+cv::Mat getSobelDifference(int win);
+
 //brief:萃取型别,作用是根据depth确定数据型别
 //becare;要求depth编译时期确定
 template<int depth>
@@ -70,7 +77,6 @@ class GetTypeFormDepth<6> {
 public:
 	typedef double ValueType;
 };
-
 
 //brief:统一的删除器,为了应对c++17之前的shared_ptr连个delete[]都需要显示传入的缺陷
 template<typename Ty>
