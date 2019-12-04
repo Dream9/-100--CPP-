@@ -37,19 +37,24 @@ void PrewittOperator::operator()() {
 
 #else
 
-	int filter_x[kWin*kWin] = {
-		-1, 0, 1,
-		-1, 0, 1,
-		-1, 0, 1
-	};
-	detail::filter2D<CV_8U, CV_16S>(data, img_x, filter_x, kWin, kWin, false, false);
+	//以下直接采用二维卷积的操作
+	//int filter_x[kWin*kWin] = {
+	//	-1, 0, 1,
+	//	-1, 0, 1,
+	//	-1, 0, 1
+	//};
+	//detail::filter2D<CV_8U, CV_16S>(data, img_x, filter_x, kWin, kWin, false, false);
 
-	int filter_y[kWin*kWin] = {
-		-1, -1, -1,
-		0, 0, 0,
-		1, 1, 1,
-	};
-	detail::filter2D<CV_8U, CV_16S>(data, img_y, filter_y, kWin, kWin, false, false);
+	//int filter_y[kWin*kWin] = {
+	//	-1, -1, -1,
+	//	0, 0, 0,
+	//	1, 1, 1,
+	//};
+	//detail::filter2D<CV_8U, CV_16S>(data, img_y, filter_y, kWin, kWin, false, false);
+
+	//以下实现采用将Prewitt算子分离计算的方式
+	prewitt_(&data, &img_x, CV_16S, 1, 0);
+	prewitt_(&data, &img_y, CV_16S, 0, 1);
 
 #endif
 
@@ -70,6 +75,30 @@ void PrewittOperator::operator()() {
 		show(figs, 4);
 	else
 		show(figs + 1, 3);
+}
+
+//brief:利用Prewitt的可分离性，分别再两个方向上计算
+void PrewittOperator::prewitt_(void* src, void* dst, int ddepth, int dx, int dy, int bordertype) {
+	assert((dx == 0 && dy != 0) || (dy == 0 && dx != 0));
+
+	cv::Mat& data = *static_cast<cv::Mat*>(src);
+	cv::Mat& img = *static_cast<cv::Mat*>(dst);
+
+	//列向量平滑算子和列向量差分算子
+	cv::Mat smoth_kernel = (cv::Mat_<float>(3, 1) << 1, 1, 1);
+	cv::Mat diff_kernel = (cv::Mat_<float>(3, 1) << -1, 0, 1);
+
+
+	if (dx) {
+		detail::sepConvolution2D(data, img, ddepth, diff_kernel.t(), smoth_kernel, cv::Point(-1, -1), bordertype);
+		//need flip
+		//cv::sepFilter2D(data, img, ddepth, diff_kernel.t(), smoth_kernel, cv::Point(-1, -1), 0.0, bordertype);
+	}
+	else {
+		detail::sepConvolution2D(data, img, ddepth, smoth_kernel.t(), diff_kernel, cv::Point(-1, -1), bordertype);
+		//need flip
+		//cv::sepFilter2D(data, img, ddepth, diff_kernel, smoth_kernel.t(), cv::Point(-1, -1), 0.0, bordertype);
+	}
 }
 
 }//！namespace digital

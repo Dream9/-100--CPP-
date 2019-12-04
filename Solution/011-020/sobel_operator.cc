@@ -35,17 +35,17 @@ void SobelOperator::operator()() {
 
 #else
 	//最初采用固定的空间滤波核的实现方式
-	//int filter_x[win_*win_] = {
+	//int filter_x[] = {
 	//	-1, 0, 1,
 	//	-2, 0, 2,
 	//	-1, 0, 1 };
-	//detail::filter2D<CV_8U, CV_16S, int>(data, img_x, filter_x, win_, win_, false, false);
-	//
-	//int filter_y[win_*win_] = {
+	//detail::filter2D<CV_8U, CV_16S, int>(data, img_x, filter_x, 3, 3, false, false);
+
+	//int filter_y[] = {
 	//	-1, -2, -1,
-	//	0, 0, 0,
+	//	0, 1, 0,
 	//	1, 2, 1 };
-	//detail::filter2D<CV_8U, CV_16S, int>(data, img_y, filter_y, win_, win_, false, false);
+	//detail::filter2D<CV_8U, CV_16S, int>(data, img_y, filter_y, 3, 3, false, true);
 	
 	//根据窗口大小决定算子
 	//利用函数得到平滑算子
