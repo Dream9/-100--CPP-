@@ -15,8 +15,10 @@
 //#include"Solution/011-020/motion_blur.h"
 //#include"Solution/011-020/max_min_filter.h"
 //#include"Solution/011-020/differential_filter.h"
-#include"Solution/011-020/sobel_operator.h"
-#include"Solution/011-020/prewitt_operator.h"
+//#include"Solution/011-020/sobel_operator.h"
+//#include"Solution/011-020/prewitt_operator.h"
+#include"Solution/011-020/laplacian.h"
+#include"Solution/011-020/emboss_filter.h"
 
 #ifdef _WIN32
 #include<direct.h>
@@ -26,18 +28,23 @@
 
 using namespace digital;
 
-const char* datapath ="F:/yzhh/VS2017pro/DigitalImageProcess/data/";
+const char* kDefaultDatapath ="F:/yzhh/VS2017pro/DigitalImageProcess/data/";
+
 #define CHECK_ZERO(x,y) if((x))\
                  {\
                       perror("Fatal error:"#y);\
                       exit(EXIT_FAILURE);\
                  }
-int main() {
+int main(int argc, char** argv) {
+	const char* datapath;
+	datapath = argc > 1 ? argv[1] : kDefaultDatapath;
 
 #ifdef _WIN32
 	CHECK_ZERO(_chdir(datapath), "change work directory failed.");
-#else
+#elif defined(__LINUX__)
 	CHECK_ZERO(chdir(datapath), "change work directory failed.");
+#else
+#error unexpected os
 #endif
 
 	//ChannelSwap cs001("imori.jpg",
@@ -104,16 +111,24 @@ int main() {
     //        		true);
 	//Solve(df014);
 	
-	SobelOperator so015("imori.jpg",
-					5,
-            		true);
-	Solve(so015);
+	//SobelOperator so015("imori.jpg",
+	//				5,
+    //        		true);
+	//Solve(so015);
 	
-	PrewittOperator po016("imori.jpg",
+	//PrewittOperator po016("imori.jpg",
+    //        		true);
+	//Solve(po016);
+
+	//Laplacian la017("imori.jpg",
+    //        		true);
+	//Solve(la017);
+	
+	EmbossFilter ef018("imori.jpg",
             		true);
-	Solve(po016);
+	Solve(ef018);
+
+
 }
-
-
 
 #undef CHECK_ZERO

@@ -17,6 +17,12 @@ int factorial(int i);
 cv::Mat getSmoothKernel(int win);
 //brief:获得窗口为win的一维sobel差分算子列向量
 cv::Mat getSobelDifference(int win);
+//brief:卷积运算
+void convolution2D(cv::Mat& src, cv::Mat& dst, int ddepth, cv::Mat kernel, cv::Point p = cv::Point(-1, -1), int bordertype = cv::BORDER_DEFAULT);
+//brief:二维分离式卷积运算
+void sepConvolution2D(cv::Mat& src, cv::Mat& dst, int ddepth, cv::Mat kernelx, cv::Mat kernely, cv::Point p = cv::Point(-1, -1), int bordertype = cv::BORDER_DEFAULT);
+//brief:灰度反转
+void colorInversion(cv::Mat& src, int max_value = UINT8_MAX);
 
 //brief:萃取型别,作用是根据depth确定数据型别
 //becare;要求depth编译时期确定
@@ -95,6 +101,7 @@ void flipFilter(Ty* arr, int N2) {
 	while (left < right)
 		std::swap(*left++, *right--);
 }
+
 
 //brief:二维矩阵卷积
 //parameter: src：原始Mat 

@@ -1,5 +1,10 @@
 #include"Solution/base.h"
 
+#include<opencv2/imgproc.hpp>
+
+//for test
+#include<vector>
+
 namespace detail {
 
 //breif:计算阶乘
@@ -43,6 +48,36 @@ cv::Mat getSobelDifference(int n)
 	}
 	*cur = 1;
 	return diff;
+}
+
+//brief:二维卷积
+void convolution2D(cv::Mat& src, cv::Mat& dst, int ddepth, cv::Mat kernel, cv::Point p , int bordertype) {
+	cv::Mat flip_k;
+	cv::flip(kernel, flip_k, -1);
+
+	//fort test
+	//std::vector<float> vk = std::vector<float>(flip_k);
+
+	cv::filter2D(src, dst, ddepth, flip_k, p, 0.0, bordertype);
+}
+
+//brief:分离的二维卷积
+void sepConvolution2D(cv::Mat& src, cv::Mat& dst, int ddepth, cv::Mat kernelx, cv::Mat kernely, cv::Point p , int bordertype) {
+	cv::Mat flip_kx;
+	cv::Mat flip_ky;
+	cv::flip(kernelx, flip_kx, -1);
+	cv::flip(kernely, flip_ky, -1);
+
+	//fort test
+	//std::vector<float> vx = std::vector<float>(kernelx);
+	//std::vector<float> vy = std::vector<float>(flip_ky);
+
+	cv::sepFilter2D(src, dst, ddepth, flip_kx, flip_ky, p, 0.0, bordertype);
+}
+
+//brief:
+void colorInversion(cv::Mat& src, int max_value) {
+	src = max_value - src;
 }
 
 }//!namespace detail
