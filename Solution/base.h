@@ -11,6 +11,21 @@
 //brief:对外隐藏
 namespace detail {
 
+//brief:根据窗口确定sigma大小
+inline double getSigma(int size) {
+	assert(size > 1);
+
+	return 0.3 * ((size - 1) * 0.5 - 1) + 0.8;
+}
+//brief:根据sigma反推窗口大小
+inline int getWinSize(double sigma) {
+	assert(sigma > 0);
+
+	return static_cast<int>((sigma * 3) * 0.5 + 1);
+}
+
+//brief:获得均值为1，方差为1的随机数
+double randNorm();
 //brief:计算阶乘
 int factorial(int i);
 //brief:获得窗口为win的一维二项式平滑算子列向量
@@ -18,14 +33,33 @@ cv::Mat getSmoothKernel(int win);
 //brief:获得窗口为win的一维sobel差分算子列向量
 cv::Mat getSobelDifference(int win);
 //brief:卷积运算
-void convolution2D(cv::Mat& src, cv::Mat& dst, int ddepth, cv::Mat kernel, cv::Point p = cv::Point(-1, -1), int bordertype = cv::BORDER_DEFAULT);
+void convolution2D(const cv::Mat& src,
+	cv::Mat& dst,
+	int ddepth,
+	const cv::Mat& kernel,
+	cv::Point p = cv::Point(-1, -1),
+	int bordertype = cv::BORDER_DEFAULT);
 //brief:二维分离式卷积运算
-void sepConvolution2D(cv::Mat& src, cv::Mat& dst, int ddepth, cv::Mat kernelx, cv::Mat kernely, cv::Point p = cv::Point(-1, -1), int bordertype = cv::BORDER_DEFAULT);
+void sepConvolution2D(const cv::Mat& src,
+	cv::Mat& dst,
+	int ddepth,
+	const cv::Mat& kernelx, 
+	const cv::Mat& kernely, 
+	cv::Point p = cv::Point(-1, -1),
+	int bordertype = cv::BORDER_DEFAULT);
 //brief:灰度反转
 void colorInversion(cv::Mat& src, int max_value = UINT8_MAX);
 
 //brief:萃取型别,作用是根据depth确定数据型别
 //becare;要求depth编译时期确定
+//       opencv关于类型反射的实现，他是采用了运行时if-else跳转到对应template特化的函数处
+//       不需要用户显示指明类型，但要为所有可能的调用生成代码
+//       比如如下的源码：
+//       if (ddepth == CV_16S && sdepth == CV_32F)
+//       return makePtr<ColumnFilter<Cast<float, short>, ColumnNoVec> >(kernel, anchor, delta);
+//       if (ddepth == CV_16S && sdepth == CV_64F)
+//       return makePtr<ColumnFilter<Cast<double, short>, ColumnNoVec> >(kernel, anchor, delta);
+
 template<int depth>
 class GetTypeFormDepth {
 public:

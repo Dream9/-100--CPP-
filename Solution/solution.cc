@@ -14,6 +14,8 @@ inline void __show_without_destroy(const string& name, void* figure);
 
 void __exit_failure();
 
+void __cout_data(int ddepth, void* cursor, char delims = ' ');
+
 }
 
 namespace digital {
@@ -149,19 +151,58 @@ void __dealException(
 #undef DIGITAL_ERROR_FORMAT
 
 //brief:just for test , never be used outside
+void __MatrixTest(void* Mat1) {
+	cv::Mat& img = *static_cast<cv::Mat*>(Mat1);
+	
+	int rows = img.rows;
+	int cols = img.cols;
+
+	int depth = img.depth();
+	int elemsize1 = static_cast<int>(img.elemSize1());
+	int channels = img.channels();
+
+	auto cur = img.data; 
+	for (int i = 0; i < rows; ++i) {
+		for (int j = 0; j < cols; ++j) {
+			for (int c = 0; c < channels; ++c) {
+				__cout_data(depth, cur);
+				cur += elemsize1;
+			}
+		}
+		std::cout << "\r\n";
+		// you can check this row here
+		int __i = 0;	(void)__i;
+	}
+}
+
+//brief:just for test , never be used outside
 void __MatrixTest(void* first, void* second) {
 	cv::Mat& img = *static_cast<cv::Mat*>(first);
 	cv::Mat& out = *static_cast<cv::Mat*>(second);
 	
 	int rows = img.rows;
 	int cols = img.cols;
+	
+	int depth = img.depth();
+	int depth_out = out.depth();
+	int elemsize1 = static_cast<int>(img.elemSize1());
+	int elemsize1_out = static_cast<int>(out.elemSize1());
+	int channels = img.channels();
+
+	auto cur = img.data;
+	auto cur_out = out.data;
 
 	for (int i = 0; i < rows; ++i) {
 		for (int j = 0; j < cols; ++j) {
-			std::cout << img.at<uint8_t>(i, j) << ":"
-					  << out.at<short>(i, j)
-				      << "\r\n";
+			for (int c = 0; c < channels; ++c) {
+				__cout_data(depth, cur);
+				__cout_data(depth_out, cur_out);
+				std::cout << "\r\n";
+				cur += elemsize1;
+				cur_out += elemsize1_out;
+			}
 		}
+		std::cout << "----------------\r\n";
 		// you can check this row here
 		int __i = 0;	(void)__i;
 	}
@@ -210,6 +251,28 @@ void __exit_failure() {
 #endif
 	exit(EXIT_FAILURE);
 }
+
+
+//brief:根据不同深度输出结果
+#define __CASE_DEPTH_COUT(x, type, v, delims) case x:\
+                                    std::cout << *(static_cast<type *>(v)) << delims;\
+                                    break;
+void __cout_data(int ddepth, void* cursor, char delims) {
+	switch (ddepth)
+	{
+		__CASE_DEPTH_COUT(CV_8U, uint8_t, cursor, delims);
+		__CASE_DEPTH_COUT(CV_8S, int8_t, cursor, delims);
+		__CASE_DEPTH_COUT(CV_16S, int16_t, cursor, delims);
+		__CASE_DEPTH_COUT(CV_16U, uint16_t, cursor, delims);
+		__CASE_DEPTH_COUT(CV_32S, int32_t, cursor, delims);
+		__CASE_DEPTH_COUT(CV_32F, float, cursor, delims);
+		__CASE_DEPTH_COUT(CV_64F, double, cursor, delims);
+	default:
+		dealException(digital::kParameterNotMatch);
+		break;
+	}
+}
+#undef __CASE_DEPTH_COUT
 
 }//!namespace
 

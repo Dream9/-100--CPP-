@@ -63,6 +63,7 @@ private:
 //统一的接口
 void Solve(Solution& solution);
 //brief:仅用于测试
+void __MatrixTest(void* Mat1);
 void __MatrixTest(void* Mat1, void* Mat2);
 
 //brief:debug时提醒图像显示类型匹配

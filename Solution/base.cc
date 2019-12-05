@@ -2,10 +2,20 @@
 
 #include<opencv2/imgproc.hpp>
 
+#include<random>
+
 //for test
 #include<vector>
 
 namespace detail {
+
+static std::default_random_engine __global_eng;
+static std::normal_distribution<> __global_dis(1, 1);
+//brief:返回服从正态分布的随机数，E = 1 , D = 1
+//becare:不是线程安全的
+double randNorm() {
+	return __global_dis(__global_eng);
+}
 
 //breif:计算阶乘
 //FIXME:尾递归实现
@@ -51,7 +61,13 @@ cv::Mat getSobelDifference(int n)
 }
 
 //brief:二维卷积
-void convolution2D(cv::Mat& src, cv::Mat& dst, int ddepth, cv::Mat kernel, cv::Point p , int bordertype) {
+void convolution2D(const cv::Mat& src, 
+	cv::Mat& dst, 
+	int ddepth, 
+	const cv::Mat& kernel, 
+	cv::Point p , 
+	int bordertype) 
+{
 	cv::Mat flip_k;
 	cv::flip(kernel, flip_k, -1);
 
@@ -62,7 +78,14 @@ void convolution2D(cv::Mat& src, cv::Mat& dst, int ddepth, cv::Mat kernel, cv::P
 }
 
 //brief:分离的二维卷积
-void sepConvolution2D(cv::Mat& src, cv::Mat& dst, int ddepth, cv::Mat kernelx, cv::Mat kernely, cv::Point p , int bordertype) {
+void sepConvolution2D(const cv::Mat& src, 
+	cv::Mat& dst, 
+	int ddepth,
+	const cv::Mat& kernelx,
+	const cv::Mat& kernely, 
+	cv::Point p , 
+	int bordertype) 
+{
 	cv::Mat flip_kx;
 	cv::Mat flip_ky;
 	cv::flip(kernelx, flip_kx, -1);
