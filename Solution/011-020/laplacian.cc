@@ -6,7 +6,8 @@
 
 namespace digital {
 
-//brief:
+//brief:拉普拉斯算子并没有对图像做平滑处理，其对细节/噪声的响应较大
+//      LoG会在拉普拉斯算子基础上加上高斯平滑
 void Laplacian::operator()() {
 	cv::Mat data = cv::imread(getPath());
 	if (data.empty()) {
@@ -14,7 +15,7 @@ void Laplacian::operator()() {
 		return;
 	}
 	cv::cvtColor(data, data, cv::COLOR_RGB2GRAY);
-	cv::GaussianBlur(data, data, cv::Size(3,3), 0);
+	cv::GaussianBlur(data, data, cv::Size(5,5), 0);//依然进行了平滑处理
 	cv::Mat img;
 
 #ifdef USE_OPENCVLIB
@@ -27,10 +28,10 @@ void Laplacian::operator()() {
 
 #endif
 
-	cv::convertScaleAbs(img, img, 1.0, 0.0);
+	cv::convertScaleAbs(img, img);//, 1.0, 0.0);
 
 	//颜色反转
-	//detail::colorInversion(img);
+	detail::colorInversion(img);
 
 	if (needShowOriginal())
 		show(&data, &img);
