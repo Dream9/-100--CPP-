@@ -24,14 +24,29 @@ enum ErrorCode {
 };
 
 const double k_PI = 3.141592653;
+const double k_EPS = 1e-6;
 
 enum {
 	BORDER_DEFAULT = 4,
 };
 
 //brief:处理出错信息
-#define dealException(x) __dealException(x,__FILE__, __LINE__, __FUNCTION__)
+#define dealException(x) digital::__dealException(x,__FILE__, __LINE__, __FUNCTION__)
 void __dealException(ErrorCode code, const char* file, int line, const char* func);
+
+//brief:输出提示信息
+#define coutInfo(x) digital::__coutInfo(x,__FILE__, __LINE__, __FUNCTION__)
+inline void __coutInfo(const char* str, const char* file, int line, const char* func) {
+	fprintf(stderr, "[%s-%d-%s]:%s", file, line, func, str);
+}
+
+//brief:该函数仅为了调试方便，release时不会出现
+#ifndef NDEBUG
+template<typename... Args>
+void __printInfo(const Args&... args) {
+	fprintf(stderr, args...);
+}
+#endif
 
 }
 

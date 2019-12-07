@@ -24,14 +24,44 @@ inline int getWinSize(double sigma) {
 	return static_cast<int>((sigma * 3) * 0.5 + 1);
 }
 
+//brief:计算单个Mat的概率密度函数
+//parameter:src:带解析源
+//          dst:存储目标，结果默认为CV_32F
+//          min,max:数据源的范围
+//          bins:分块数
+//          *select_channels 和len用于说明参与计算的Mat的通道，默认时为全部参与运算，其组织形式参见cv::calcHist
+//becare:Mat的depth必须是CV_8U,opencv中则还做了CV_16U和CV_32F的重载（通过if-else分发）
+void calcHistogram(const cv::Mat& src,
+	cv::Mat& dst,
+	int min,
+	int max,
+	int bins,
+	int* select_channels = nullptr,
+	int len = -1);
+
+//brief:根据灰度pdf绘制目标图像
+//paramter: hist:r*1的pdf向量
+//          dst:结果数据存储位置
+//          size，type 目标类型
+//          color:颜色
+void fillHistogram(const cv::Mat& hist, 
+	cv::Mat& dst,
+	const cv::Size& size, 
+	int type = CV_8UC1, 
+	const cv::Scalar& color = cv::Scalar::all(0));
+
 //brief:获得均值为1，方差为1的随机数
 double randNorm();
+
 //brief:计算阶乘
 int factorial(int i);
+
 //brief:获得窗口为win的一维二项式平滑算子列向量
 cv::Mat getSmoothKernel(int win);
+
 //brief:获得窗口为win的一维sobel差分算子列向量
 cv::Mat getSobelDifference(int win);
+
 //brief:卷积运算
 void convolution2D(const cv::Mat& src,
 	cv::Mat& dst,
@@ -39,6 +69,7 @@ void convolution2D(const cv::Mat& src,
 	const cv::Mat& kernel,
 	cv::Point p = cv::Point(-1, -1),
 	int bordertype = cv::BORDER_DEFAULT);
+
 //brief:二维分离式卷积运算
 void sepConvolution2D(const cv::Mat& src,
 	cv::Mat& dst,
@@ -47,6 +78,7 @@ void sepConvolution2D(const cv::Mat& src,
 	const cv::Mat& kernely, 
 	cv::Point p = cv::Point(-1, -1),
 	int bordertype = cv::BORDER_DEFAULT);
+
 //brief:灰度反转
 void colorInversion(cv::Mat& src, int max_value = UINT8_MAX);
 

@@ -17,8 +17,12 @@
 //#include"Solution/011-020/differential_filter.h"
 //#include"Solution/011-020/sobel_operator.h"
 //#include"Solution/011-020/prewitt_operator.h"
-#include"Solution/011-020/laplacian.h"
-#include"Solution/011-020/emboss_filter.h"
+//#include"Solution/011-020/laplacian.h"
+//#include"Solution/011-020/emboss_filter.h"
+//#include"Solution/011-020/LoG_filter.h"
+//#include"Solution/011-020/histogram.h"
+
+#include"Solution/021-030/normalization.h"
 
 #ifdef _WIN32
 #include<direct.h>
@@ -124,9 +128,25 @@ int main(int argc, char** argv) {
     //        		true);
 	//Solve(la017);
 	
-	EmbossFilter ef018("imori.jpg",
+	//EmbossFilter ef018("imori.jpg",
+    //        		true);
+	//Solve(ef018);
+	
+	//LoG lg019("imori_noise.jpg",
+	//				5,
+    //        		true);
+	//Solve(lg019);
+	
+	//Histogram hg020("imori_dark.jpg",
+	//				223,
+    //        		true);
+	//Solve(hg020);
+	
+	Normalization nl021("imori_dark.jpg",
+				    true,
             		true);
-	Solve(ef018);
+	Solve(nl021);
+
 
 
 }
