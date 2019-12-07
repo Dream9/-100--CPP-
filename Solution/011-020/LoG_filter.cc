@@ -71,7 +71,7 @@ void LoG::getLoGFilter_(void* dst) {
 	int N = win_ * win_ - 1 ;
 	cursor = kernel.ptr<float>(0, 0);
 	while (N >= 0) {
-		*cursor /= sum;
+		*cursor /= float(sum);
 		--N;
 	}
 }
