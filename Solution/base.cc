@@ -224,4 +224,42 @@ void colorInversion(cv::Mat& src, int max_value) {
 	src = max_value - src;
 }
 
+//brief；
+//becare:用户操作可以直接修改/读取每个像素灰度值
+//      只针对CV_8U类型的数据做了特化，也可以考虑采用detail::filter2D的形式扩展其他类型，或者if-else分发
+void grayscaleTransform(cv::Mat& src, const GrayScaleOperationType& ops) {
+	assert(src.depth() == CV_8U);
+	
+	cv::Size size = src.size();
+	int step = static_cast<int>(src.step);
+	if (src.isContinuous()) {
+		size.width *= size.height * src.channels();
+		size.height = 1;
+	}
+
+	auto cur = src.data;
+	for (int i = 0; i < size.height; ++i) {
+		auto tmp = cur;
+		for (int j = 0; j < size.width; ++j) {
+			ops(tmp);
+			++tmp;
+		}
+		cur += step;
+	}
+}
+
+//brief；伸缩转换
+void convertScaleAbs(cv::Mat& src, cv::Mat& dst, double alpha, double beta) {
+	assert(src.depth() == CV_8U);
+
+	dst.create(src.size(), CV_MAKETYPE(CV_8U, src.channels()));
+
+	uint8_t* iter = dst.data;
+	auto set_value = [&](uint8_t* cursor) {
+		*iter = cv::saturate_cast<uint8_t>(*cursor * alpha + beta);
+		++iter;
+	};
+	detail::grayscaleTransform(src, set_value);
+}
+
 }//!namespace detail

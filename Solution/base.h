@@ -6,10 +6,13 @@
 
 //#include<memory>
 #include<vector>
+#include<functional>
 
 
 //brief:对外隐藏
 namespace detail {
+
+typedef std::function<void(uint8_t* cursor)> GrayScaleOperationType;
 
 //brief:根据窗口确定sigma大小
 inline double getSigma(int size) {
@@ -80,7 +83,19 @@ void sepConvolution2D(const cv::Mat& src,
 	int bordertype = cv::BORDER_DEFAULT);
 
 //brief:灰度反转
+//paramter:src:目标对象
+//         max_value:图像最大值
 void colorInversion(cv::Mat& src, int max_value = UINT8_MAX);
+
+//brief:为每个像素值应用用户定义的操作ops
+//paramter:dst:目标对象
+//         ops:用户传入的可调用对象，类型参见定义
+void grayscaleTransform(cv::Mat& src, const GrayScaleOperationType& ops);
+
+//brief:参见cv::convertScaleAbs实现
+//     这里是利用了lambda对象配合grayscalTransform实现
+//becare:由于grayscaleTransform只特化了CV_8U,因此本函数也只针对src为CV_8U类型的数据
+void convertScaleAbs(cv::Mat& src, cv::Mat& dst, double alpha, double beta);
 
 //brief:萃取型别,作用是根据depth确定数据型别
 //becare;要求depth编译时期确定

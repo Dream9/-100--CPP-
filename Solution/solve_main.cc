@@ -1,33 +1,13 @@
-#include"Solution/solution.h"
+//²âÊÔÎÄ¼þ
 
-//#include"Solution/001-010/channel_swap.h"
-//#include"Solution/001-010/grayscale.h"
-//#include"Solution/001-010/binarization.h"
-//#include"Solution/001-010/otsu.h"
-//#include"Solution/001-010/reverse_hue.h"
-//#include"Solution/001-010/reduce_color.h"
-//#include"Solution/001-010/mean_pooling.h"
-//#include"Solution/001-010/max_pooling.h"
-//#include"Solution/001-010/gaussian_filter.h"
-//#include"Solution/001-010/median_blur.h"
-
-//#include"Solution/011-020/mean_blur.h"
-//#include"Solution/011-020/motion_blur.h"
-//#include"Solution/011-020/max_min_filter.h"
-//#include"Solution/011-020/differential_filter.h"
-//#include"Solution/011-020/sobel_operator.h"
-//#include"Solution/011-020/prewitt_operator.h"
-//#include"Solution/011-020/laplacian.h"
-//#include"Solution/011-020/emboss_filter.h"
-//#include"Solution/011-020/LoG_filter.h"
-//#include"Solution/011-020/histogram.h"
-
-#include"Solution/021-030/normalization.h"
+#include"Solution/solve_main.h"
 
 #ifdef _WIN32
 #include<direct.h>
-#else
+#elif defined(__LINUX__)
 #include<unistd.h>
+#else
+#error Unexpected os
 #endif
 
 using namespace digital;
@@ -51,101 +31,151 @@ int main(int argc, char** argv) {
 #error unexpected os
 #endif
 
-	//ChannelSwap cs001("imori.jpg",
-	//	              true);
-	//Solve(cs001);
+#ifdef NO_001
+	ChannelSwap cs001("imori.jpg",
+		              true);
+	Solve(cs001);
+#endif
 
-	//Grayscale gs002("imori.jpg",
-	//	              true);
-	//Solve(gs002);
+#ifdef NO_002
+	Grayscale gs002("imori.jpg",
+		              true);
+	Solve(gs002);
+#endif
 
-	//Binarization bz003("imori.jpg",
-	//				  true);
-	//Solve(bz003);
+#ifdef NO_003
+	Binarization bz003("imori.jpg",
+					  true);
+	Solve(bz003);
+#endif
 
-	//Otsu otsu004("imori.jpg",
-	//				  true);
-	//Solve(otsu004);
+#ifdef NO_004
+	Otsu otsu004("imori.jpg",
+					  true);
+	Solve(otsu004);
+#endif
 
-	//ReverseHue rh005("imori.jpg",
-	//				  true);
-	//Solve(rh005);
+#ifdef NO_005
+	ReverseHue rh005("imori.jpg",
+					  true);
+	Solve(rh005);
+#endif
 
-	//ReduceColor rc006("imori.jpg",
-	//				  true);
-	//Solve(rc006);
+#ifdef NO_006
+	ReduceColor rc006("imori.jpg",
+					  true);
+	Solve(rc006);
+#endif
 
-	//MeanPooling mp007("imori.jpg", 
-	//                8,
-	//				  true);
-	//Solve(mp007);
+#ifdef NO_007
+	MeanPooling mp007("imori.jpg", 
+	                8,
+					  true);
+	Solve(mp007);
+#endif
 
-	//MaxPooling maxp008("imori.jpg", 
-	//                8,
-	//				  true);
-	//Solve(maxp008);
+#ifdef NO_008
+	MaxPooling maxp008("imori.jpg", 
+	                8,
+					  true);
+	Solve(maxp008);
+#endif
 
-	//GaussianFilter gf009("imori.jpg", 
-	//                1.5,
-	//                5,
-	//				  true);
-	//Solve(gf009);
+#ifdef NO_009
+	GaussianFilter gf009("imori.jpg", 
+	                1.5,
+	                5,
+					  true);
+	Solve(gf009);
+#endif
 
-	//MedianBlur mb010("imori_noise.jpg", 9,
-	//				  true);
-	//Solve(mb010);
+#ifdef NO_010
+	MedianBlur mb010("imori_noise.jpg", 9,
+					  true);
+	Solve(mb010);
+#endif
 
-	//MeanBlur meanb011("imori.jpg", 
-	//				  5,
-	//				  true);
-	//Solve(meanb011);
+#ifdef NO_011
+	MeanBlur meanb011("imori.jpg", 
+					  5,
+					  true);
+	Solve(meanb011);
+#endif
 
-	//MotionBlur motionb012("imori.jpg",
-	//				  3,
-	//				  0,
-	//				  true);
-	//Solve(motionb012);
+#ifdef NO_012
+	MotionBlur motionb012("imori.jpg",
+					  3,
+					  0,
+					  true);
+	Solve(motionb012);
+#endif
 
-	//MaxMinFilter mmf013("imori.jpg",
-	//				 3,
-	//	             true);
-	//Solve(mmf013);
+#ifdef NO_013
+	MaxMinFilter mmf013("imori.jpg",
+					 3,
+		             true);
+	Solve(mmf013);
+#endif
 
-	//DifferentialFilter df014("imori.jpg",
-    //        		true);
-	//Solve(df014);
+#ifdef NO_014
+	DifferentialFilter df014("imori.jpg",
+            		true);
+	Solve(df014);
+#endif
+
+#ifdef NO_015
+	SobelOperator so015("imori.jpg",
+					5,
+            		true);
+	Solve(so015);
+#endif
 	
-	//SobelOperator so015("imori.jpg",
-	//				5,
-    //        		true);
-	//Solve(so015);
-	
-	//PrewittOperator po016("imori.jpg",
-    //        		true);
-	//Solve(po016);
+#ifdef NO_016
+	PrewittOperator po016("imori.jpg",
+            		true);
+	Solve(po016);
+#endif
 
-	//Laplacian la017("imori.jpg",
-    //        		true);
-	//Solve(la017);
+#ifdef NO_017
+	Laplacian la017("imori.jpg",
+            		true);
+	Solve(la017);
+#endif
 	
-	//EmbossFilter ef018("imori.jpg",
-    //        		true);
-	//Solve(ef018);
+#ifdef NO_018
+	EmbossFilter ef018("imori.jpg",
+            		true);
+	Solve(ef018);
+#endif
 	
-	//LoG lg019("imori_noise.jpg",
-	//				5,
-    //        		true);
-	//Solve(lg019);
+#ifdef NO_019
+	LoG lg019("imori_noise.jpg",
+					5,
+            		true);
+	Solve(lg019);
+#endif
 	
-	//Histogram hg020("imori_dark.jpg",
-	//				223,
-    //        		true);
-	//Solve(hg020);
+#ifdef NO_020
+	Histogram hg020("imori_dark.jpg",
+					223,
+            		true);
+	Solve(hg020);
+#endif
 	
+#ifdef NO_021
 	Normalization nl021("imori_dark.jpg",
 				    true,
             		true);
 	Solve(nl021);
+#endif
+
+#ifndef NO_022
+	HistogramTransformation ht022("imori_dark.jpg",
+					128.,
+					50,
+					true);
+	Solve(ht022);
+#endif
 
 
 

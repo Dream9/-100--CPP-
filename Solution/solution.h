@@ -44,7 +44,7 @@ public:
 	void show(void** figs, int len);
 	void show(void** figs, int len, const string& str);
 
-	void calibration(void*);
+	//void calibration(void*);
 
 	bool needShowOriginal()const {
 		return show_old_;
