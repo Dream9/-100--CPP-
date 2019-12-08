@@ -19,9 +19,7 @@ void Normalization::operator()() {
 
 
 	cv::normalize(data, img, 255, 0, cv::NORM_MINMAX, CV_8U);
-
-#else
-
+	
 	//normalize 采用NORM_MINMAX时等价于下面的操作
 	double min = 0.;
 	double max = 0.;
@@ -32,6 +30,22 @@ void Normalization::operator()() {
 	double beta = 0 - alpha * min;
 	
 	cv::convertScaleAbs(data, img, 255 / (max - min), beta);
+
+#else
+
+	double min = FLT_MAX;
+	double max = 0.;
+	
+	auto get_min_max = [&](uint8_t* cursor) {
+		min = MIN(min, *cursor);
+		max = MAX(max, *cursor);
+	};
+	detail::grayscaleTransform(data, get_min_max);
+	
+	double alpha = (255 - 0) / (max - min);
+	double beta = 0 - alpha * min;
+	
+	detail::convertScaleAbs(data, img, alpha, beta);
 
 #endif
 
