@@ -169,12 +169,19 @@ int main(int argc, char** argv) {
 	Solve(nl021);
 #endif
 
-#ifndef NO_022
+#ifdef NO_022
 	HistogramTransformation ht022("imori_dark.jpg",
 					128.,
 					50,
 					true);
 	Solve(ht022);
+#endif
+
+#ifndef NO_022
+	EqualizeHistogram eh023("imori_dark.jpg",
+					true,
+					true);
+	Solve(eh023);
 #endif
 
 

@@ -97,6 +97,10 @@ void grayscaleTransform(cv::Mat& src, const GrayScaleOperationType& ops);
 //becare:由于grayscaleTransform只特化了CV_8U,因此本函数也只针对src为CV_8U类型的数据
 void convertScaleAbs(cv::Mat& src, cv::Mat& dst, double alpha, double beta);
 
+//brief:参见cv::equalizeHist实现
+//becare:opencv中要求src必须是CV_8U1C的数据，这里做了一点小扩展，即多通道数据也可以参与运算
+void equalizeHist(cv::Mat& src, cv::Mat& dst);
+
 //brief:萃取型别,作用是根据depth确定数据型别
 //becare;要求depth编译时期确定
 //       opencv关于类型反射的实现，他是采用了运行时if-else跳转到对应template特化的函数处

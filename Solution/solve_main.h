@@ -87,8 +87,12 @@
 #include"Solution/021-030/normalization.h"
 #endif
 
-#ifndef NO_022
+#ifdef NO_022
 #include"Solution/021-030/histogram_transformation.h"
+#endif
+
+#ifndef NO_023
+#include"Solution/021-030/equalize_histogram.h"
 #endif
 
 

@@ -5,9 +5,14 @@
 
 #include<random>
 #include<algorithm>
-
-//for test
+#include<numeric>
 #include<vector>
+
+namespace {
+
+const int kCV8U_MAX = 1 << 8;
+
+}
 
 namespace detail {
 
@@ -189,6 +194,7 @@ void convolution2D(const cv::Mat& src,
 	cv::Point p , 
 	int bordertype) 
 {
+	assert(!src.empty());
 	cv::Mat flip_k;
 	cv::flip(kernel, flip_k, -1);
 
@@ -207,6 +213,7 @@ void sepConvolution2D(const cv::Mat& src,
 	cv::Point p , 
 	int bordertype) 
 {
+	assert(!src.empty());
 	cv::Mat flip_kx;
 	cv::Mat flip_ky;
 	cv::flip(kernelx, flip_kx, -1);
@@ -228,6 +235,7 @@ void colorInversion(cv::Mat& src, int max_value) {
 //becare:用户操作可以直接修改/读取每个像素灰度值
 //      只针对CV_8U类型的数据做了特化，也可以考虑采用detail::filter2D的形式扩展其他类型，或者if-else分发
 void grayscaleTransform(cv::Mat& src, const GrayScaleOperationType& ops) {
+	assert(!src.empty());
 	assert(src.depth() == CV_8U);
 	
 	cv::Size size = src.size();
@@ -250,6 +258,7 @@ void grayscaleTransform(cv::Mat& src, const GrayScaleOperationType& ops) {
 
 //brief；伸缩转换
 void convertScaleAbs(cv::Mat& src, cv::Mat& dst, double alpha, double beta) {
+	assert(!src.empty());
 	assert(src.depth() == CV_8U);
 
 	dst.create(src.size(), CV_MAKETYPE(CV_8U, src.channels()));
@@ -261,5 +270,42 @@ void convertScaleAbs(cv::Mat& src, cv::Mat& dst, double alpha, double beta) {
 	};
 	detail::grayscaleTransform(src, set_value);
 }
+
+//brief:直方图均衡化
+void equalizeHist(cv::Mat& src, cv::Mat& dst) {
+	assert(!src.empty());
+	assert(src.depth() == CV_8U);
+
+	int buf[kCV8U_MAX];
+	memset(buf, 0, sizeof buf);
+
+	//获得图像的pdf
+	auto get_pdf = [&](uint8_t* cursor) {
+		++buf[*cursor];
+	};
+	detail::grayscaleTransform(src, get_pdf);
+
+	//获得图像cdf
+	int cdf[kCV8U_MAX];
+	std::partial_sum(buf, buf + kCV8U_MAX, cdf);
+
+	double alpha = 1.*kCV8U_MAX / (src.rows * src.cols * src.channels());
+
+	//预计算映射关系
+	buf[0] = 0;
+	std::transform(cdf + 1, cdf + kCV8U_MAX, buf + 1, [=](int val) {
+		 return cv::saturate_cast<uint8_t>(val * alpha - 1);
+	});
+
+	dst.create(src.size(), src.type());
+	auto iter = dst.data;
+	//灰度均衡化
+	auto equalize_func = [&](uint8_t* cursor) {
+		*iter = static_cast<uint8_t>(buf[*cursor]);
+		++iter;
+	};
+	detail::grayscaleTransform(src, equalize_func);
+}
+
 
 }//!namespace detail
