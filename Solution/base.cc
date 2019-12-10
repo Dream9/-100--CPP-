@@ -10,7 +10,7 @@
 
 namespace {
 
-const int kCV8U_MAX = 1 << 8;
+const int kCV8U_UPPER_BOUND = 1 << 8;
 
 }
 
@@ -276,7 +276,7 @@ void equalizeHist(cv::Mat& src, cv::Mat& dst) {
 	assert(!src.empty());
 	assert(src.depth() == CV_8U);
 
-	int buf[kCV8U_MAX];
+	int buf[kCV8U_UPPER_BOUND];
 	memset(buf, 0, sizeof buf);
 
 	//获得图像的pdf
@@ -286,14 +286,14 @@ void equalizeHist(cv::Mat& src, cv::Mat& dst) {
 	detail::grayscaleTransform(src, get_pdf);
 
 	//获得图像cdf
-	int cdf[kCV8U_MAX];
-	std::partial_sum(buf, buf + kCV8U_MAX, cdf);
+	int cdf[kCV8U_UPPER_BOUND];
+	std::partial_sum(buf, buf + kCV8U_UPPER_BOUND, cdf);
 
-	double alpha = 1.*kCV8U_MAX / (src.rows * src.cols * src.channels());
+	double alpha = 1.*kCV8U_UPPER_BOUND / (src.rows * src.cols * src.channels());
 
 	//预计算映射关系
 	buf[0] = 0;
-	std::transform(cdf + 1, cdf + kCV8U_MAX, buf + 1, [=](int val) {
+	std::transform(cdf + 1, cdf + kCV8U_UPPER_BOUND, buf + 1, [=](int val) {
 		 return cv::saturate_cast<uint8_t>(val * alpha - 1);
 	});
 

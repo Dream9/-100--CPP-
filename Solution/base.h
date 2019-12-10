@@ -66,6 +66,12 @@ cv::Mat getSmoothKernel(int win);
 cv::Mat getSobelDifference(int win);
 
 //brief:卷积运算
+//paramter: src:数据源
+//          dst:存储位置
+//          ddepth：目标像素深度
+//          kernel:卷积核
+//          p:锚点，参见opencv
+//          bordertype:扩充边界类型,参见opencv
 void convolution2D(const cv::Mat& src,
 	cv::Mat& dst,
 	int ddepth,
@@ -74,6 +80,12 @@ void convolution2D(const cv::Mat& src,
 	int bordertype = cv::BORDER_DEFAULT);
 
 //brief:二维分离式卷积运算
+//paramter: src:数据源
+//          dst:存储位置
+//          ddepth：目标像素深度
+//          kernel:卷积核
+//          p:锚点，参见opencv
+//          bordertype:扩充边界类型,参见opencv
 void sepConvolution2D(const cv::Mat& src,
 	cv::Mat& dst,
 	int ddepth,
@@ -90,6 +102,7 @@ void colorInversion(cv::Mat& src, int max_value = UINT8_MAX);
 //brief:为每个像素值应用用户定义的操作ops
 //paramter:dst:目标对象
 //         ops:用户传入的可调用对象，类型参见定义
+//becare:凡是仅涉及到单个像素的操作，基本上都可以通过本接口完成，必然gamma变换、灰度拉伸、均衡化等
 void grayscaleTransform(cv::Mat& src, const GrayScaleOperationType& ops);
 
 //brief:参见cv::convertScaleAbs实现

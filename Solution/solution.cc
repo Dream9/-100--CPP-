@@ -260,7 +260,12 @@ void __exit_failure() {
 void __cout_data(int ddepth, void* cursor, char delims) {
 	switch (ddepth)
 	{
-		__CASE_DEPTH_COUT(CV_8U, uint8_t, cursor, delims);
+		//__CASE_DEPTH_COUT(CV_8U, uint8_t, cursor, delims);
+		//强制输出数字而非字符
+	case CV_8U:
+		std::cout << +*(static_cast<uint8_t*>(cursor)) << delims;
+		break;
+
 		__CASE_DEPTH_COUT(CV_8S, int8_t, cursor, delims);
 		__CASE_DEPTH_COUT(CV_16S, int16_t, cursor, delims);
 		__CASE_DEPTH_COUT(CV_16U, uint16_t, cursor, delims);

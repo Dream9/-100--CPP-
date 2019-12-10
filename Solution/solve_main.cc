@@ -177,11 +177,19 @@ int main(int argc, char** argv) {
 	Solve(ht022);
 #endif
 
-#ifndef NO_022
+#ifdef NO_023
 	EqualizeHistogram eh023("imori_dark.jpg",
 					true,
 					true);
 	Solve(eh023);
+#endif
+
+#ifndef NO_024
+	GammaCorrection gc024("imori_gamma.jpg",
+					1.5,
+					2.5,
+					true);
+	Solve(gc024);
 #endif
 
 

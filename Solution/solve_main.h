@@ -91,8 +91,12 @@
 #include"Solution/021-030/histogram_transformation.h"
 #endif
 
-#ifndef NO_023
+#ifdef NO_023
 #include"Solution/021-030/equalize_histogram.h"
+#endif
+
+#ifndef NO_024
+#include"Solution/021-030/gamma_correction.h"
 #endif
 
 
