@@ -1,5 +1,5 @@
 #include"Solution/021-030/equalize_histogram.h"
-#include"Solution/base.h"
+#include"Solution/grayscale_transfrom.h"
 
 #include<opencv2/highgui.hpp>
 #ifdef USE_OPENCVLIB

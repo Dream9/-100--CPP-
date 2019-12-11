@@ -1,5 +1,5 @@
 #include"Solution/021-030/histogram_transformation.h"
-#include"Solution/base.h"
+#include"Solution/grayscale_transfrom.h"
 
 #include<opencv2/highgui.hpp>
 
@@ -69,4 +69,4 @@ void HistogramTransformation::operator()() {
 	
 }
 
-}
+}//!namespace digital

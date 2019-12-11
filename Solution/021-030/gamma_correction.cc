@@ -1,7 +1,7 @@
 #include"Solution/021-030/gamma_correction.h"
 
 #ifndef USE_OPENCVLIB
-#include"Solution/base.h"
+#include"Solution/grayscale_transfrom.h"
 #include<functional>
 #endif
 
