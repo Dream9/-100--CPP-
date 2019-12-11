@@ -1,5 +1,5 @@
 #include"Solution/011-020/histogram.h"
-#include"Solution/base.h"
+#include"Solution/grayscale_transfrom.h"
 
 #include<opencv2/highgui.hpp>
 #include<opencv2/imgproc.hpp>
