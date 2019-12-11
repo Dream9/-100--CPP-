@@ -1,4 +1,5 @@
-//brief:仅为内部使用，用户不应直接调用本文件，包含线性/非线性滤波运算等基础功能
+//brief:提供有关图像滤波功能的封装，主要包含涉及到窗口操作的图像处理功能
+//      仅为内部使用，用户不应直接使用本文件，包含线性/非线性滤波运算等基础功能
 
 #ifndef _SOLUTION_BASE_H_
 
@@ -6,13 +7,10 @@
 
 //#include<memory>
 #include<vector>
-#include<functional>
 
 
 //brief:对外隐藏
 namespace detail {
-
-typedef std::function<void(uint8_t* cursor)> GrayScaleOperationType;
 
 //brief:根据窗口确定sigma大小
 inline double getSigma(int size) {
@@ -20,38 +18,13 @@ inline double getSigma(int size) {
 
 	return 0.3 * ((size - 1) * 0.5 - 1) + 0.8;
 }
+
 //brief:根据sigma反推窗口大小
 inline int getWinSize(double sigma) {
 	assert(sigma > 0);
 
 	return static_cast<int>((sigma * 3) * 0.5 + 1);
 }
-
-//brief:计算单个Mat的概率密度函数
-//parameter:src:带解析源
-//          dst:存储目标，结果默认为CV_32F
-//          min,max:数据源的范围
-//          bins:分块数
-//          *select_channels 和len用于说明参与计算的Mat的通道，默认时为全部参与运算，其组织形式参见cv::calcHist
-//becare:Mat的depth必须是CV_8U,opencv中则还做了CV_16U和CV_32F的重载（通过if-else分发）
-void calcHistogram(const cv::Mat& src,
-	cv::Mat& dst,
-	int min,
-	int max,
-	int bins,
-	int* select_channels = nullptr,
-	int len = -1);
-
-//brief:根据灰度pdf绘制目标图像
-//paramter: hist:r*1的pdf向量
-//          dst:结果数据存储位置
-//          size，type 目标类型
-//          color:颜色
-void fillHistogram(const cv::Mat& hist, 
-	cv::Mat& dst,
-	const cv::Size& size, 
-	int type = CV_8UC1, 
-	const cv::Scalar& color = cv::Scalar::all(0));
 
 //brief:获得均值为1，方差为1的随机数
 double randNorm();
@@ -94,26 +67,6 @@ void sepConvolution2D(const cv::Mat& src,
 	cv::Point p = cv::Point(-1, -1),
 	int bordertype = cv::BORDER_DEFAULT);
 
-//brief:灰度反转
-//paramter:src:目标对象
-//         max_value:图像最大值
-void colorInversion(cv::Mat& src, int max_value = UINT8_MAX);
-
-//brief:为每个像素值应用用户定义的操作ops
-//paramter:dst:目标对象
-//         ops:用户传入的可调用对象，类型参见定义
-//becare:凡是仅涉及到单个像素的操作，基本上都可以通过本接口完成，必然gamma变换、灰度拉伸、均衡化等
-void grayscaleTransform(cv::Mat& src, const GrayScaleOperationType& ops);
-
-//brief:参见cv::convertScaleAbs实现
-//     这里是利用了lambda对象配合grayscalTransform实现
-//becare:由于grayscaleTransform只特化了CV_8U,因此本函数也只针对src为CV_8U类型的数据
-void convertScaleAbs(cv::Mat& src, cv::Mat& dst, double alpha, double beta);
-
-//brief:参见cv::equalizeHist实现
-//becare:opencv中要求src必须是CV_8U1C的数据，这里做了一点小扩展，即多通道数据也可以参与运算
-void equalizeHist(cv::Mat& src, cv::Mat& dst);
-
 //brief:萃取型别,作用是根据depth确定数据型别
 //becare;要求depth编译时期确定
 //       opencv关于类型反射的实现，他是采用了运行时if-else跳转到对应template特化的函数处
@@ -123,13 +76,11 @@ void equalizeHist(cv::Mat& src, cv::Mat& dst);
 //       return makePtr<ColumnFilter<Cast<float, short>, ColumnNoVec> >(kernel, anchor, delta);
 //       if (ddepth == CV_16S && sdepth == CV_64F)
 //       return makePtr<ColumnFilter<Cast<double, short>, ColumnNoVec> >(kernel, anchor, delta);
-
 template<int depth>
 class GetTypeFormDepth {
 public:
 	typedef int ValueType;
 };
-
 //参照
 //#define CV_8U   0
 //#define CV_8S   1
@@ -139,7 +90,7 @@ public:
 //#define CV_32F  5
 //#define CV_64F  6
 //#define CV_USRTYPE1 7
-
+//进行特例化
 template<>
 class GetTypeFormDepth<0> {
 public:
@@ -200,7 +151,6 @@ void flipFilter(Ty* arr, int N2) {
 		std::swap(*left++, *right--);
 }
 
-
 //brief:二维矩阵卷积
 //parameter: src：原始Mat 
 //         dst:目标Mat 
@@ -217,7 +167,7 @@ void flipFilter(Ty* arr, int N2) {
 template<int sdepth, int ddepth, typename Ty = int>
 void filter2D(cv::Mat& data, 
 	cv::Mat& img, 
-	Ty* arr_filter, 
+	Ty* arr_filter, //FIXME:应该提供cv::Mat的扩展
 	int win_c, 
 	int win_r, 
 	bool need_normalize = true, 
@@ -258,7 +208,6 @@ void filter2D(cv::Mat& data,
 		tmp_f = Ty(1);
 	const double kFactor = 1.0 / tmp_f;
 
-	//
 	if (need_flip)
 		flipFilter(filter, kWinSize);
 

@@ -184,13 +184,20 @@ int main(int argc, char** argv) {
 	Solve(eh023);
 #endif
 
-#ifndef NO_024
+#ifdef NO_024
 	GammaCorrection gc024("imori_gamma.jpg",
 					1.5,
 					2.5,
 					true);
 	Solve(gc024);
 #endif
+
+#ifndef NO_025
+	NearestNeighborInterpolation gi025("imori.jpg",
+					true);
+	Solve(gi025);
+#endif
+
 
 
 

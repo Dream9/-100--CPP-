@@ -1,10 +1,11 @@
-//brief:
+//brief:提供有关几何变换的功能封装
 
 #ifndef _SOLUTION_GEOMETRIC_TRANSFROM_H_
 #define _SOLUTION_GEOMETRIC_TRANSFROM_H_
 
-
 #include<opencv2/imgproc.hpp>
+
+#include<functional>
 
 namespace detail {
 
@@ -40,6 +41,9 @@ enum InterpolationFlags{
 
 static const double kPI = 3.141592653;
 
+typedef std::function<void(int, int, uint8_t*)> TriversalOperatorType;
+
+//brief:rad/deg转换
 inline double Rad2Deg(double rad) {
 	return rad * 180 / kPI;
 }
@@ -47,11 +51,39 @@ inline double Deg2Rad(double deg) {
 	return deg * kPI / 180;
 }
 
-cv::Mat getRotationMatrix2D(cv::Point rotation_center, double angle_count_clock, double x_scale, double y_scale = -1);
+//brief:计算旋转缩放的仿射变换参数，参见cv::getRotationMatrix2D
+//parameter:rotation_center:旋转中心
+//          angle_count_clock:按逆时针方向计算出来的旋转角度，顺时针取反即可
+//          x_scale:x方向缩放比例
+//          y_scale:y方向缩放比例，默认与x_scale一致
+//return:仿射矩阵，类型为CV_64F,大小为3*3，这里核opencv略有不同，源码返回的是2*3，即最后补齐的一行被忽略了
+cv::Mat getRotationMatrix2D(const cv::Point& rotation_center,
+	double angle_count_clock, 
+	double x_scale, 
+	double y_scale = -1);
+
+//brief:对图像实施仿射变换，参见cv::wrapAffine
+//parameter:src:输入图像
+//          dst:输出图像，与src具有相同类型
+//          M:变换矩阵
+//          size:输出图像尺寸
+//          interpolate_type:插值类型
+//          constant_value:对于变换后超出图像映射范围的默认值
+void warpAffine(const cv::Mat& src,
+	cv::Mat& dst,
+	const cv::Mat& M,
+	cv::Size size,
+	int interpolate_type = detail::INTER_LINEAR,
+	const cv::Scalar& constant_value = cv::Scalar());
+
+//brief:对图像遍历的封装，在对应位置调用用户传入函数，本函数亦作为其他几何变换的基础操作
+//parameter:src:输入图像
+//          op:在src的[x,y]位置进行用户指定的操作
+//becare: TriversalOperatorType的参数类型分别对应x,y坐标以及该点数据的handler
+void geometricTriversal(cv::Mat& src, const TriversalOperatorType& op);
 
 
 }//!namespace detail
-
 
 
 #endif // !_SOLUTION_GEOMETRIC_TRANSFROM_H_

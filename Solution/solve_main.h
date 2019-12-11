@@ -95,8 +95,12 @@
 #include"Solution/021-030/equalize_histogram.h"
 #endif
 
-#ifndef NO_024
+#ifdef NO_024
 #include"Solution/021-030/gamma_correction.h"
+#endif
+
+#ifndef NO_025
+#include"Solution/021-030/nearest_neighbor_interpolation.h"
 #endif
 
 

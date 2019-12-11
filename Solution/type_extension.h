@@ -37,7 +37,7 @@ void __dealException(ErrorCode code, const char* file, int line, const char* fun
 //brief:输出提示信息
 #define coutInfo(x) digital::__coutInfo(x,__FILE__, __LINE__, __FUNCTION__)
 inline void __coutInfo(const char* str, const char* file, int line, const char* func) {
-	fprintf(stderr, "[%s-%d-%s]:%s", file, line, func, str);
+	fprintf(stderr, "[%s-%d-%s]:%s\r\n", file, line, func, str);
 }
 
 //brief:该函数仅为了调试方便，release时不会出现
