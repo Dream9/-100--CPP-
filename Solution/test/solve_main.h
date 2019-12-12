@@ -99,9 +99,18 @@
 #include"Solution/021-030/gamma_correction.h"
 #endif
 
-#ifndef NO_025
+#ifdef NO_025
 #include"Solution/021-030/nearest_neighbor_interpolation.h"
 #endif
+
+#ifdef NO_026
+#include"Solution/021-030/bilinear_interpolation.h"
+#endif
+
+#ifndef NO_027
+#include"Solution/021-030/bicubic_interpolation.h"
+#endif
+
 
 
 #endif // _SOLUTION_SOLVE_MAIN_H_

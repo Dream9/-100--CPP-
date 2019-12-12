@@ -1,6 +1,6 @@
-//²âÊÔÎÄ¼þ
+//test file 
 
-#include"Solution/solve_main.h"
+#include"Solution/test/solve_main.h"
 
 #ifdef _WIN32
 #include<direct.h>
@@ -192,11 +192,24 @@ int main(int argc, char** argv) {
 	Solve(gc024);
 #endif
 
-#ifndef NO_025
+#ifdef NO_025
 	NearestNeighborInterpolation gi025("imori.jpg",
 					true);
 	Solve(gi025);
 #endif
+
+#ifdef NO_026
+	BilinearInterpolation bi026("imori.jpg",
+					true);
+	Solve(bi026);
+#endif
+
+#ifndef NO_027
+	BicubicInterpolation bicubici026("imori.jpg",
+					true); 
+	Solve(bicubici026);
+#endif
+
 
 
 
