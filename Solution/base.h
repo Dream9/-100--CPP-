@@ -1,50 +1,50 @@
-//brief:Ìá¹©ÓĞ¹ØÍ¼ÏñÂË²¨¹¦ÄÜµÄ·â×°£¬Ö÷Òª°üº¬Éæ¼°µ½´°¿Ú²Ù×÷µÄÍ¼Ïñ´¦Àí¹¦ÄÜ
-//      ½öÎªÄÚ²¿Ê¹ÓÃ£¬ÓÃ»§²»Ó¦Ö±½ÓÊ¹ÓÃ±¾ÎÄ¼ş£¬°üº¬ÏßĞÔ/·ÇÏßĞÔÂË²¨ÔËËãµÈ»ù´¡¹¦ÄÜ
+//brief:æä¾›æœ‰å…³å›¾åƒæ»¤æ³¢åŠŸèƒ½çš„å°è£…ï¼Œä¸»è¦åŒ…å«æ¶‰åŠåˆ°çª—å£æ“ä½œçš„å›¾åƒå¤„ç†åŠŸèƒ½
+//      ä»…ä¸ºå†…éƒ¨ä½¿ç”¨ï¼Œç”¨æˆ·ä¸åº”ç›´æ¥ä½¿ç”¨æœ¬æ–‡ä»¶ï¼ŒåŒ…å«çº¿æ€§/éçº¿æ€§æ»¤æ³¢è¿ç®—ç­‰åŸºç¡€åŠŸèƒ½
 
 #ifndef _SOLUTION_BASE_H_
+#define _SOLUTION_BASE_H_
 
 #include<opencv2/highgui.hpp>
 
 //#include<memory>
 #include<vector>
 
-
-//brief:¶ÔÍâÒş²Ø
+//brief:å¯¹å¤–éšè—
 namespace detail {
 
-//brief:¸ù¾İ´°¿ÚÈ·¶¨sigma´óĞ¡
+//brief:æ ¹æ®çª—å£ç¡®å®šsigmaå¤§å°
 inline double getSigma(int size) {
 	assert(size > 1);
 
 	return 0.3 * ((size - 1) * 0.5 - 1) + 0.8;
 }
 
-//brief:¸ù¾İsigma·´ÍÆ´°¿Ú´óĞ¡
+//brief:æ ¹æ®sigmaåæ¨çª—å£å¤§å°
 inline int getWinSize(double sigma) {
 	assert(sigma > 0);
 
 	return static_cast<int>((sigma * 3) * 0.5 + 1);
 }
 
-//brief:»ñµÃ¾ùÖµÎª1£¬·½²îÎª1µÄËæ»úÊı
+//brief:è·å¾—å‡å€¼ä¸º1ï¼Œæ–¹å·®ä¸º1çš„éšæœºæ•°
 double randNorm();
 
-//brief:¼ÆËã½×³Ë
+//brief:è®¡ç®—é˜¶ä¹˜
 int factorial(int i);
 
-//brief:»ñµÃ´°¿ÚÎªwinµÄÒ»Î¬¶şÏîÊ½Æ½»¬Ëã×ÓÁĞÏòÁ¿
+//brief:è·å¾—çª—å£ä¸ºwinçš„ä¸€ç»´äºŒé¡¹å¼å¹³æ»‘ç®—å­åˆ—å‘é‡
 cv::Mat getSmoothKernel(int win);
 
-//brief:»ñµÃ´°¿ÚÎªwinµÄÒ»Î¬sobel²î·ÖËã×ÓÁĞÏòÁ¿
+//brief:è·å¾—çª—å£ä¸ºwinçš„ä¸€ç»´sobelå·®åˆ†ç®—å­åˆ—å‘é‡
 cv::Mat getSobelDifference(int win);
 
-//brief:¾í»ıÔËËã
-//paramter: src:Êı¾İÔ´
-//          dst:´æ´¢Î»ÖÃ
-//          ddepth£ºÄ¿±êÏñËØÉî¶È
-//          kernel:¾í»ıºË
-//          p:Ãªµã£¬²Î¼ûopencv
-//          bordertype:À©³ä±ß½çÀàĞÍ,²Î¼ûopencv
+//brief:å·ç§¯è¿ç®—
+//paramter: src:æ•°æ®æº
+//          dst:å­˜å‚¨ä½ç½®
+//          ddepthï¼šç›®æ ‡åƒç´ æ·±åº¦
+//          kernel:å·ç§¯æ ¸
+//          p:é”šç‚¹ï¼Œå‚è§opencv
+//          bordertype:æ‰©å……è¾¹ç•Œç±»å‹,å‚è§opencv
 void convolution2D(const cv::Mat& src,
 	cv::Mat& dst,
 	int ddepth,
@@ -52,13 +52,13 @@ void convolution2D(const cv::Mat& src,
 	cv::Point p = cv::Point(-1, -1),
 	int bordertype = cv::BORDER_DEFAULT);
 
-//brief:¶şÎ¬·ÖÀëÊ½¾í»ıÔËËã
-//paramter: src:Êı¾İÔ´
-//          dst:´æ´¢Î»ÖÃ
-//          ddepth£ºÄ¿±êÏñËØÉî¶È
-//          kernel:¾í»ıºË
-//          p:Ãªµã£¬²Î¼ûopencv
-//          bordertype:À©³ä±ß½çÀàĞÍ,²Î¼ûopencv
+//brief:äºŒç»´åˆ†ç¦»å¼å·ç§¯è¿ç®—
+//paramter: src:æ•°æ®æº
+//          dst:å­˜å‚¨ä½ç½®
+//          ddepthï¼šç›®æ ‡åƒç´ æ·±åº¦
+//          kernel:å·ç§¯æ ¸
+//          p:é”šç‚¹ï¼Œå‚è§opencv
+//          bordertype:æ‰©å……è¾¹ç•Œç±»å‹,å‚è§opencv
 void sepConvolution2D(const cv::Mat& src,
 	cv::Mat& dst,
 	int ddepth,
@@ -67,11 +67,11 @@ void sepConvolution2D(const cv::Mat& src,
 	cv::Point p = cv::Point(-1, -1),
 	int bordertype = cv::BORDER_DEFAULT);
 
-//brief:İÍÈ¡ĞÍ±ğ,×÷ÓÃÊÇ¸ù¾İdepthÈ·¶¨Êı¾İĞÍ±ğ
-//becare;ÒªÇódepth±àÒëÊ±ÆÚÈ·¶¨
-//       opencv¹ØÓÚÀàĞÍ·´ÉäµÄÊµÏÖ£¬ËûÊÇ²ÉÓÃÁËÔËĞĞÊ±if-elseÌø×ªµ½¶ÔÓ¦templateÌØ»¯µÄº¯Êı´¦
-//       ²»ĞèÒªÓÃ»§ÏÔÊ¾Ö¸Ã÷ÀàĞÍ£¬µ«ÒªÎªËùÓĞ¿ÉÄÜµÄµ÷ÓÃÉú³É´úÂë
-//       ±ÈÈçÈçÏÂµÄÔ´Âë£º
+//brief:èƒå–å‹åˆ«,ä½œç”¨æ˜¯æ ¹æ®depthç¡®å®šæ•°æ®å‹åˆ«
+//becare;è¦æ±‚depthç¼–è¯‘æ—¶æœŸç¡®å®š
+//       opencvå…³äºç±»å‹åå°„çš„å®ç°ï¼Œä»–æ˜¯é‡‡ç”¨äº†è¿è¡Œæ—¶if-elseè·³è½¬åˆ°å¯¹åº”templateç‰¹åŒ–çš„å‡½æ•°å¤„
+//       ä¸éœ€è¦ç”¨æˆ·æ˜¾ç¤ºæŒ‡æ˜ç±»å‹ï¼Œä½†è¦ä¸ºæ‰€æœ‰å¯èƒ½çš„è°ƒç”¨ç”Ÿæˆä»£ç 
+//       æ¯”å¦‚å¦‚ä¸‹çš„æºç ï¼š
 //       if (ddepth == CV_16S && sdepth == CV_32F)
 //       return makePtr<ColumnFilter<Cast<float, short>, ColumnNoVec> >(kernel, anchor, delta);
 //       if (ddepth == CV_16S && sdepth == CV_64F)
@@ -81,7 +81,7 @@ class GetTypeFormDepth {
 public:
 	typedef int ValueType;
 };
-//²ÎÕÕ
+//å‚ç…§
 //#define CV_8U   0
 //#define CV_8S   1
 //#define CV_16U  2
@@ -90,7 +90,7 @@ public:
 //#define CV_32F  5
 //#define CV_64F  6
 //#define CV_USRTYPE1 7
-//½øĞĞÌØÀı»¯
+//è¿›è¡Œç‰¹ä¾‹åŒ–
 template<>
 class GetTypeFormDepth<0> {
 public:
@@ -133,15 +133,15 @@ public:
 	typedef double ValueType;
 };
 
-//brief:Í³Ò»µÄÉ¾³ıÆ÷,ÎªÁËÓ¦¶Ôc++17Ö®Ç°µÄshared_ptrÁ¬¸ödelete[]¶¼ĞèÒªÏÔÊ¾´«ÈëµÄÈ±Ïİ
+//brief:ç»Ÿä¸€çš„åˆ é™¤å™¨,ä¸ºäº†åº”å¯¹c++17ä¹‹å‰çš„shared_ptrè¿ä¸ªdelete[]éƒ½éœ€è¦æ˜¾ç¤ºä¼ å…¥çš„ç¼ºé™·
 template<typename Ty>
 void deleter(Ty* arr) {
 	delete[] arr;
 }
 
-//brief:·­×ªÂË²¨Æ÷
-//parameter:arrÆğÊ¼µØÖ·£¬N2ÂË²¨Æ÷È«²¿ÔªËØ´óĞ¡
-//becare:½öÕë¶Ô¾ßÓĞÁ¬ĞøÄÚ´æµÄÈİÆ÷
+//brief:ç¿»è½¬æ»¤æ³¢å™¨
+//parameter:arrèµ·å§‹åœ°å€ï¼ŒN2æ»¤æ³¢å™¨å…¨éƒ¨å…ƒç´ å¤§å°
+//becare:ä»…é’ˆå¯¹å…·æœ‰è¿ç»­å†…å­˜çš„å®¹å™¨
 template<typename Ty>
 void flipFilter(Ty* arr, int N2) {
 	Ty* left = arr;
@@ -151,29 +151,29 @@ void flipFilter(Ty* arr, int N2) {
 		std::swap(*left++, *right--);
 }
 
-//brief:¶şÎ¬¾ØÕó¾í»ı
-//parameter: src£ºÔ­Ê¼Mat 
-//         dst:Ä¿±êMat 
-//         ddepth:Ä¿±êÏñËØÉî¶È
-//	       arr_filter:ÂË²¨Æ÷²ÎÊı£¬¶şÎ¬µÄÂË²¨Æ÷ĞèÒª×ª»»³É¾ßÓĞÁ¬ĞøÄÚ´æ·Ö²¼µÄÒ»Î¬ĞÎÊ½
-//         win_c/win_r:´°¿Ú´óĞ¡£¬
-//         need_normalizeÊÇ·ñĞèÒª¹éÒ»»¯ÂË²¨Æ÷²ÎÊı
-//         need_flip:ÊÇ·ñĞèÒª·­×ªfilter
-//         Ky:ÄäÃû±äÁ¿£¬½öÓÃÀ´±íÕ÷Ô­Ê¼Êı¾İÀàĞÍ
-//becare:ÆÚ´ıTyÀàĞÍµÄÊı¾İ²»»áÔÚ¼ÆËã¹ı³ÌÖĞÒç³ö£¬ÀıÈç¼´MatÎªuchar(Ky)µÄ£¬Ê¹ÓÃuint16_t »òÕß¸ü¸ßµÄTy
-//       ±¾º¯ÊıÌá¹©ÁËÍ³Ò»¾í»ı¼ÆËã£¬Òò´ËÃ»ÓĞÕë¶ÔfilterÊı¾İÌØµã½øĞĞÈÎºÎÓÅ»¯£¬ÈçĞèÓÅ»¯£¬Ğè×ÔĞĞÁíÍâÊµÏÖ
-//       ±¾º¯ÊıÔÊĞí×î´óÍ¨µÀÊıÁ¿Îª4(rgba)
-//TODO:µ±ÂË²¨ºËºÜ´óÊ±²ÉÓÃDFT¼ÆËã£¬²Î¿¼opencvÔ´Âë
+//brief:äºŒç»´çŸ©é˜µå·ç§¯
+//parameter: srcï¼šåŸå§‹Mat 
+//         dst:ç›®æ ‡Mat 
+//         ddepth:ç›®æ ‡åƒç´ æ·±åº¦
+//	       arr_filter:æ»¤æ³¢å™¨å‚æ•°ï¼ŒäºŒç»´çš„æ»¤æ³¢å™¨éœ€è¦è½¬æ¢æˆå…·æœ‰è¿ç»­å†…å­˜åˆ†å¸ƒçš„ä¸€ç»´å½¢å¼
+//         win_c/win_r:çª—å£å¤§å°ï¼Œ
+//         need_normalizeæ˜¯å¦éœ€è¦å½’ä¸€åŒ–æ»¤æ³¢å™¨å‚æ•°
+//         need_flip:æ˜¯å¦éœ€è¦ç¿»è½¬filter
+//         Ky:åŒ¿åå˜é‡ï¼Œä»…ç”¨æ¥è¡¨å¾åŸå§‹æ•°æ®ç±»å‹
+//becare:æœŸå¾…Tyç±»å‹çš„æ•°æ®ä¸ä¼šåœ¨è®¡ç®—è¿‡ç¨‹ä¸­æº¢å‡ºï¼Œä¾‹å¦‚å³Matä¸ºuchar(Ky)çš„ï¼Œä½¿ç”¨uint16_t æˆ–è€…æ›´é«˜çš„Ty
+//       æœ¬å‡½æ•°æä¾›äº†ç»Ÿä¸€å·ç§¯è®¡ç®—ï¼Œå› æ­¤æ²¡æœ‰é’ˆå¯¹filteræ•°æ®ç‰¹ç‚¹è¿›è¡Œä»»ä½•ä¼˜åŒ–ï¼Œå¦‚éœ€ä¼˜åŒ–ï¼Œéœ€è‡ªè¡Œå¦å¤–å®ç°
+//       æœ¬å‡½æ•°å…è®¸æœ€å¤§é€šé“æ•°é‡ä¸º4(rgba)
+//TODO:å½“æ»¤æ³¢æ ¸å¾ˆå¤§æ—¶é‡‡ç”¨DFTè®¡ç®—ï¼Œå‚è€ƒopencvæºç 
 template<int sdepth, int ddepth, typename Ty = int>
 void filter2D(cv::Mat& data, 
 	cv::Mat& img, 
-	Ty* arr_filter, //FIXME:Ó¦¸ÃÌá¹©cv::MatµÄÀ©Õ¹
+	Ty* arr_filter, //FIXME:åº”è¯¥æä¾›cv::Matçš„æ‰©å±•
 	int win_c, 
 	int win_r, 
 	bool need_normalize = true, 
 	bool need_flip = true)
 {
-	//FIXME:Í¨¹ıÊµÏÖ·´ÏòµÄDataTypeÀ´È¡ÏûKyµÄÏÔÊ¾ËµÃ÷
+	//FIXME:é€šè¿‡å®ç°åå‘çš„DataTypeæ¥å–æ¶ˆKyçš„æ˜¾ç¤ºè¯´æ˜
 	typedef GetTypeFormDepth<ddepth>::ValueType Dy;
 	typedef GetTypeFormDepth<sdepth>::ValueType Sy;
 
@@ -195,10 +195,10 @@ void filter2D(cv::Mat& data,
 
 	assert(4 >= kChannels);
 
-	//À©Õ¹±ß½ç
+	//æ‰©å±•è¾¹ç•Œ
 	cv::copyMakeBorder(data, data,offset_r, offset_r, offset_c, offset_c, cv::BORDER_DEFAULT);
 
-	//È·¶¨¹éÒ»»¯ÏµÊı
+	//ç¡®å®šå½’ä¸€åŒ–ç³»æ•°
 	Ty tmp_f = 0;
 	if (need_normalize) {
 		for (int i = 0; i < kWinSize; ++i)
@@ -211,14 +211,14 @@ void filter2D(cv::Mat& data,
 	if (need_flip)
 		flipFilter(filter, kWinSize);
 
-	//¾í»ıÔËËã
+	//å·ç§¯è¿ç®—
 	auto cur = img.data;
 	cv::Size size = data.size();
 	for (int i = offset_r; i < size.height - offset_r; ++i) {
 		auto cursor = data.ptr(i - offset_r, 0);
 		for (int j = offset_c; j < size.width - offset_c; ++j) {
 
-			//µ¥¸ö´°¿Ú¼ÆËã
+			//å•ä¸ªçª—å£è®¡ç®—
 			memset(rgba, 0, sizeof rgba);
 
 			auto iter = static_cast<Sy*>(cursor);
@@ -242,7 +242,7 @@ void filter2D(cv::Mat& data,
 			assert(cur == img.ptr<uchar>(i - offset_r, j - offset_c));
 
 			for (int cn = 0; cn < kChannels; ++cn) {
-				//FIXME:·ÀÖ¹Êı¾İÒç³ö
+				//FIXME:é˜²æ­¢æ•°æ®æº¢å‡º
 				//cur_tmp[cn] = static_cast<Ky>(rgba[cn] * kFactor);
 				cur_tmp[cn] = cv::saturate_cast<Dy>(rgba[cn] * kFactor);
 			}
@@ -251,18 +251,18 @@ void filter2D(cv::Mat& data,
 		}
 	}
 
-	//¸´Ô­´óĞ¡
+	//å¤åŸå¤§å°
 	size = img.size();
 	data(cv::Rect(offset_c, offset_r, size.width, size.height)).copyTo(data);
 }
 
-//brief:Ìá¹©»ùÓÚ·ÇÏßĞÔ²Ù×÷µÄÂË²¨½Ó¿Ú£¬ÎªÃ¿¸ö´°¿Úµ÷ÓÃÓÃ»§Ö¸¶¨Àı³Ì
-//parameter:src:Ô­Ê¼Êı¾İ
-//          dst:Ä¿±ê´æ´¢
-//          ops:ÓÃ»§Ö¸¶¨²Ù×÷
-//          win_c/win_r:ÁĞ/ĞĞ
-//          Ky*:ÄäÃû¶ÔÏó£¬½öÓÃÓÚ±íÃ÷srcÊı¾İÀàĞÍ
-//becare:OpÓ¦¸ÃÖØÔØÁËoperator()(Ky[] src,Ky* dst),ÆäÖĞsrcÎª´°¿ÚµÄÃ¿ĞĞÆğÊ¼µØÖ·£¨ĞĞÊıÓÃwin_r¾ö¶¨£©£¬dstÎª½á¹ûµØÖ·
+//brief:æä¾›åŸºäºéçº¿æ€§æ“ä½œçš„æ»¤æ³¢æ¥å£ï¼Œä¸ºæ¯ä¸ªçª—å£è°ƒç”¨ç”¨æˆ·æŒ‡å®šä¾‹ç¨‹
+//parameter:src:åŸå§‹æ•°æ®
+//          dst:ç›®æ ‡å­˜å‚¨
+//          ops:ç”¨æˆ·æŒ‡å®šæ“ä½œ
+//          win_c/win_r:åˆ—/è¡Œ
+//          Ky*:åŒ¿åå¯¹è±¡ï¼Œä»…ç”¨äºè¡¨æ˜srcæ•°æ®ç±»å‹
+//becare:Opåº”è¯¥é‡è½½äº†operator()(Ky[] src,Ky* dst),å…¶ä¸­srcä¸ºçª—å£çš„æ¯è¡Œèµ·å§‹åœ°å€ï¼ˆè¡Œæ•°ç”¨win_rå†³å®šï¼‰ï¼Œdstä¸ºç»“æœåœ°å€
 template<typename Op, typename Ky>
 void filter2DNonLinear(cv::Mat& data, 
 	cv::Mat& img, 
@@ -282,21 +282,21 @@ void filter2DNonLinear(cv::Mat& data,
 	const int kElemSize = static_cast<int>(data.elemSize());
 	const int kStep = static_cast<int>(data.step[0]);
 
-	//FIXME:»òÕßÊ¹ÓÃ vector ??
-	//std::shared_ptr<Ky*> arr_dst(new Ky*[win_r] ,deleter<Ky>);//c++17Ö®Ç°µÄshared_ptr¶ÔÓÚ¶şÎ¬¶¯Ì¬Êı×éµÄÀ©Õ¹Ì«²î£¡²îÆÀ
+	//FIXME:æˆ–è€…ä½¿ç”¨ vector ??
+	//std::shared_ptr<Ky*> arr_dst(new Ky*[win_r] ,deleter<Ky>);//c++17ä¹‹å‰çš„shared_ptrå¯¹äºäºŒç»´åŠ¨æ€æ•°ç»„çš„æ‰©å±•å¤ªå·®ï¼å·®è¯„
 	std::vector<Ky*> arr_dst(win_r, nullptr);
 
-	//À©Õ¹±ß½ç
+	//æ‰©å±•è¾¹ç•Œ
 	cv::copyMakeBorder(data, data,offset_r, offset_r, offset_c, offset_c, cv::BORDER_DEFAULT);
 
-	//ÂË²¨ÔËËã
+	//æ»¤æ³¢è¿ç®—
 	auto cur = img.data;
 	cv::Size size = data.size();
 	for (int i = offset_r; i < size.height - offset_r; ++i) {
 		auto cursor = data.ptr(i - offset_r, 0);
 		for (int j = offset_c; j < size.width - offset_c; ++j) {
 
-			//µ¥¸ö´°¿Ú¼ÆËã
+			//å•ä¸ªçª—å£è®¡ç®—
 			auto iter = static_cast<Ky*>(cursor);
 			int n = 0;
 			for (int x = 0; x < win_r; ++x) {
@@ -305,7 +305,7 @@ void filter2DNonLinear(cv::Mat& data,
 				iter += kStep;
 			}
 
-			//µ÷ÓÃÓÃ»§Àı³Ì
+			//è°ƒç”¨ç”¨æˆ·ä¾‹ç¨‹
 			//ops(arr_dst.get(), static_cast<Ky*>(cur));
 			ops(&arr_dst[0], static_cast<Ky*>(cur));
 
@@ -314,7 +314,7 @@ void filter2DNonLinear(cv::Mat& data,
 		}
 	}
 
-	//¸´Ô­´óĞ¡
+	//å¤åŸå¤§å°
 	size = img.size();
 	data(cv::Rect(offset_c, offset_r, size.width, size.height)).copyTo(data);
 }
