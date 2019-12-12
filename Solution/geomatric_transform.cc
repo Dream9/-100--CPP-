@@ -4,18 +4,41 @@
 
 namespace {
 
+const double kCubic_a = -1.;//三次插值推荐a取值
+const int kCubicWinSize = 4;
+
+//brief:计算变换前位置
 cv::Mat_<double> __getTransformPosition3D(double x, double y, cv::Mat& M);
 
+//brief:同理最近邻的权重函数为 return 1;
+
+//brief:线性插值权重函数
+inline double __getLinearWeight(double position, double target) {
+	return std::fabs(position - target);
+}
+//brief:直接估算线性插值
 inline double __getLinearEvaluate(double left, double medium, double val_left, double val_right) {
-	return (medium - left) * (val_right - val_left) + val_left;
+	return __getLinearWeight(medium, left) * (val_right - val_left) + val_left;
 }
 
+//brief:三次插值权重函数
+inline double __getCubicWeight(double position, double target) {
+	double distance = std::fabs(target - position);
+	double tmp2 = distance * distance;
+	double tmp3 = tmp2 * distance;
+
+	return distance < 1 ? 
+		(kCubic_a + 2)*tmp3 - (kCubic_a + 3)*tmp2 + 1 
+		: kCubic_a * tmp3 - 5 * kCubic_a*tmp2 + 8 * kCubic_a*distance - 4 * kCubic_a;
 }
+
+}//!namespace
 
 namespace {
 
 #define GET_NEAREST(x) static_cast<int>(x+0.5)
 #define GET_FLOOR(x) static_cast<int>(floor(x))
+#define GET_CUBIC_TOP_LEFT(x) static_cast<int>(floor(x) - 1)
 
 //brief:以最近邻的方式进行插值
 //becare:目前只针对CV_8U，其他类型未作扩展
@@ -61,6 +84,7 @@ void warpAffine_nearest(const cv::Mat& src, cv::Mat& dst, const cv::Mat& M, cv::
 
 
 //brief:以双线性插值的方式重采样
+//     双线性插值的的权重函数为L1范数：||x||1
 //becare:目前只针对CV_8U，其他类型未作扩展
 void warpAffine_linear(const cv::Mat& src, cv::Mat& dst, const cv::Mat& M, cv::Size size, const cv::Scalar& value) {
 	assert(src.depth() == CV_8U);
@@ -77,7 +101,8 @@ void warpAffine_linear(const cv::Mat& src, cv::Mat& dst, const cv::Mat& M, cv::S
 		double* arr = before[0];
 
 		cv::Point pos(GET_FLOOR(arr[0]), GET_FLOOR(arr[1]));//获取左上位置的坐标
-		if (range.contains(pos)) {
+		cv::Point pos_br(pos.x + 1, pos.y + 1);//右下坐标
+		if (range.contains(pos) && range.contains(pos_br)) {
 			//确定四个位置的handler
 			auto tl = src.ptr(pos.y, pos.x);
 			auto tr = tl + 3;
@@ -87,6 +112,8 @@ void warpAffine_linear(const cv::Mat& src, cv::Mat& dst, const cv::Mat& M, cv::S
 			for (int i = 0; i < channels; ++i) {
 #ifdef USE_ORIGINAL_IMPLEMENT
 				//遵照原始逻辑的实现
+				//becare:更原始的逻辑应该是遍历每个点，然后计算对应权值，累和
+				double x
 				double tmp1 = __getLinearEvaluate(pos.x, arr[0], *tl++, *tr++);
 				double tmp2 = __getLinearEvaluate(pos.x, arr[0], *bl++, *br++);
 				*cursor++ = cv::saturate_cast<uint8_t>(__getLinearEvaluate(pos.y, arr[1], tmp1, tmp2));
@@ -118,8 +145,65 @@ void warpAffine_linear(const cv::Mat& src, cv::Mat& dst, const cv::Mat& M, cv::S
 }
 
 //brief:以双三次插值的方式重采样
+//      这种采样方式是对辛格函数的三次逼近，而后者是理论上最佳插值函数（虽然不可能直接在实际中使用）
 void warpAffine_cubic(const cv::Mat& src, cv::Mat& dst, const cv::Mat& M, cv::Size size, const cv::Scalar& value) {
-	//
+	assert(src.depth() == CV_8U);
+	assert(src.channels() <= 4);
+
+	const int offset = 2;
+
+	cv::Mat src_border;
+	cv::copyMakeBorder(src, src_border, offset, offset, offset, offset, cv::BORDER_REPLICATE);
+
+	dst.create(size, src.type());	
+	cv::Mat M_inv = M.inv();
+	int channels = src.channels();
+	cv::Rect range(0, 0, src_border.cols, src_border.rows);
+	size_t step = src_border.step;
+
+	//核心变换
+	auto set_value = [&src_border, &M_inv, channels, range, value, step, offset](int x, int y, uint8_t* cursor) {
+		cv::Mat_<double> before = __getTransformPosition3D(x, y, M_inv);
+		double* arr = before[0];
+
+		cv::Point pos(GET_CUBIC_TOP_LEFT(arr[0]) + offset, GET_CUBIC_TOP_LEFT(arr[1]) + offset);//获取左上位置的坐标
+		cv::Point pos_br(pos.x + 3, pos.y + 3);//右下坐标
+		if (range.contains(pos) && range.contains(pos_br)) {
+			cv::Scalar gbra;
+			double wight_sum = 0.;
+			auto iter = src_border.ptr(pos.y, pos.x);
+
+			//遍历窗口内的数据，计算权值，累和
+			for (int i = 0; i < kCubicWinSize; ++i) {//列
+				auto tmp = iter;
+				for (int j = 0; j < kCubicWinSize; ++j) {//行
+					double weight_y = __getCubicWeight(pos.y + i, arr[1] + offset);
+					double weight_x = __getCubicWeight(pos.x + j, arr[0] + offset);
+					double w_x_y = weight_x * weight_y;
+					wight_sum += w_x_y;
+
+					for (int c = 0; c < channels; ++c) {//通道
+						gbra[c] += w_x_y * *tmp++;
+					}
+				}
+				iter += step;
+			}
+
+			//加权平均
+			for (int c = 0; c < channels; ++c) {
+				*cursor++ = cv::saturate_cast<uint8_t>(gbra[c] / wight_sum);
+			}
+		}
+		else {
+			//填充用户指定的常数值
+			for (int i = 0; i < channels; ++i) {
+				*cursor++ = cv::saturate_cast<uint8_t>(value[i]);
+			}
+		}
+	};
+	
+	//与遍历接口搭配在一起即可
+	detail::geometricTriversal(dst, set_value);
 }
 
 }//!namespace
