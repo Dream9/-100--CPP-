@@ -107,9 +107,19 @@
 #include"Solution/021-030/bilinear_interpolation.h"
 #endif
 
-#ifndef NO_027
+#ifdef NO_027
 #include"Solution/021-030/bicubic_interpolation.h"
 #endif
+
+#define NO_031
+//#define NO_030
+//#define NO_029
+//#define NO_028
+
+#if (defined NO_028) || (defined NO_029) || (defined NO_030) || (defined NO_031)
+#include"Solution/021-030/affine_transformation.h"
+#endif
+
 
 
 

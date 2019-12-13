@@ -204,15 +204,34 @@ int main(int argc, char** argv) {
 	Solve(bi026);
 #endif
 
-#ifndef NO_027
-	BicubicInterpolation bicubici026("imori.jpg",
+#ifdef NO_027
+	BicubicInterpolation bicubici027("imori.jpg",
 					true); 
-	Solve(bicubici026);
+	Solve(bicubici027);
 #endif
 
-
-
-
+	//以下测试共用一个用例
+#if (defined NO_028) || (defined NO_029) || (defined NO_030) || (defined NO_031)
+	int ops = 0;
+#endif
+#ifdef NO_028
+	ops = ops | AffineTransformation::TRANSLATION;
+#endif
+#ifdef NO_029
+	ops = ops | AffineTransformation::SCALE;
+#endif
+#ifdef NO_030
+	ops = ops | AffineTransformation::ROTATION;
+#endif
+#ifdef NO_031
+	ops = ops | AffineTransformation::LEAN;
+#endif
+#if (defined NO_028) || (defined NO_029) || (defined NO_030) || (defined NO_031)
+	AffineTransformation at028("imori.jpg",
+					ops,
+					true); 
+	Solve(at028);
+#endif
 
 }
 
