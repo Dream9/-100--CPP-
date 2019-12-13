@@ -245,6 +245,7 @@ void __show_without_destroy(const string& name, void* figure) {
 	cv::imshow(name, *out);
 }
 
+//becare:针对VS编译器的命令窗口会随进程退出的问题
 void __exit_failure() {
 #ifdef _MSC_VER
 	system("pause");

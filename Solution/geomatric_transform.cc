@@ -8,7 +8,7 @@ const double kCubic_a = -1.;//三次插值推荐a取值
 const int kCubicWinSize = 4;
 
 //brief:计算变换前位置
-cv::Mat_<double> __getTransformPosition3D(double x, double y, cv::Mat& M);
+cv::Mat_<double> __getTransformPosition3D(double x, double y, const cv::Mat& M);
 
 //brief:同理最近邻的权重函数为 return 1;
 
@@ -32,12 +32,15 @@ inline double __getCubicWeight(double position, double target) {
 		: kCubic_a * tmp3 - 5 * kCubic_a*tmp2 + 8 * kCubic_a*distance - 4 * kCubic_a;
 }
 
+void __getCompleteIncludeMatrix(cv::Mat& M, cv::Size& size);
+
 }//!namespace
 
 namespace {
 
-#define GET_NEAREST(x) static_cast<int>(x+0.5)
+#define GET_NEAREST(x) static_cast<int>(round(x))
 #define GET_FLOOR(x) static_cast<int>(floor(x))
+#define GET_CEIL(x) static_cast<int>(ceil(x))
 #define GET_CUBIC_TOP_LEFT(x) static_cast<int>(floor(x) - 1)
 
 //brief:以最近邻的方式进行插值
@@ -224,8 +227,27 @@ cv::Mat getRotationMatrix2D(const cv::Point& rotation_center, double angle_count
 	double sin_a = sin(alpha);
 	double cos_a = cos(alpha);
 
-	//TODO:以下几个矩阵相乘完全可以合并在一起，从而简化运算
+#ifndef USE_ORIGINAL_IMPLEMENT
+	double a11 = x_scale * cos_a;
+	double a12 = y_scale * sin_a;
+	double a21 = -x_scale * sin_a;
+	double a22 = y_scale * cos_a;
 
+	cv::Mat res(HOMOGENEOUS_MATRIX_SIZE, CV_64FC1);
+	double* iter = res.ptr<double>(0, 0);
+	*iter++ = a11;
+	*iter++ = a12;
+	*iter++ = (1 - a11)*x_scale - a12 * y_scale;
+	*iter++ = a21;
+	*iter++ = a22;
+	*iter++ = (1 - a22)*y_scale - a21 * x_scale;
+	*iter++ = 0;//FIXME:or not add this?
+	*iter++ = 0;
+	*iter++ = 1;
+
+	return res;
+#else
+	//TODO:以下几个矩阵相乘完全可以合并在一起，从而简化运算
 	//先进行中心平移
 	cv::Mat_<double> out(HOMOGENEOUS_MATRIX_SIZE);
 	out <<
@@ -254,16 +276,57 @@ cv::Mat getRotationMatrix2D(const cv::Point& rotation_center, double angle_count
 		0, 1, rotation_center.y,
 		0, 0, 1;
 	return tmp * out;
+#endif
 }
 #undef HOMOGENEOUS_MATRIX_SIZE 
 
+//brief:通过计算原始图像的四至点确定新的图像最小的不损失范围
+cv::Size getSizeAfterWarpAffine(const cv::Mat& M, const cv::Size& original_size, double* ptr_minx,double* ptr_miny) {
+	auto right = __getTransformPosition3D(original_size.width, original_size.height, M);
+	auto left = __getTransformPosition3D(0.,0., M);
+	auto top = __getTransformPosition3D(original_size.width, 0., M);
+	auto bottom = __getTransformPosition3D(0., original_size.height, M);
+
+	double xmax = right[0][0], ymax = right[0][1];
+	double xmin = xmax, ymin = ymax;
+	xmax = std::max(xmax, left[0][0]);
+	xmax = std::max(xmax, top[0][0]);
+	xmax = std::max(xmax, bottom[0][0]);
+
+	xmin = std::min(xmin, left[0][0]);
+	xmin = std::min(xmin, top[0][0]);
+	xmin = std::min(xmin, bottom[0][0]);
+
+	ymax = std::max(ymax, left[1][0]);
+	ymax = std::max(ymax, top[1][0]);
+	ymax = std::max(ymax, bottom[1][0]);
+
+	ymin = std::min(ymin, left[1][0]);
+	ymin = std::min(ymin, top[1][0]);
+	ymin = std::min(ymin, bottom[1][0]);
+
+	if (ptr_minx)
+		*ptr_minx = xmin;
+	if (ptr_miny)
+		*ptr_miny = ymin;
+
+	return cv::Size(GET_CEIL(fabs(xmax - xmin)), GET_CEIL(fabs(ymax - ymin)));
+}
+
+
 //brief:根据不同的插值类型进行相应的分发即可
 //
-void warpAffine(const cv::Mat& src, cv::Mat& dst, const cv::Mat& M, cv::Size size,
-	int interpolation_type, const cv::Scalar& value) {
+void warpAffine(const cv::Mat& src, cv::Mat& dst, cv::Mat& M, cv::Size size,
+	int interpolation_type, const cv::Scalar& value, bool need_complete_include) {
 
 	assert(src.channels() <= 4);
 	assert(src.depth() == CV_8U);
+	
+	if (need_complete_include) {
+		//需要完整包含有效数据
+		size = src.size();
+		__getCompleteIncludeMatrix(M, size);
+	}
 
 	switch (interpolation_type)
 	{
@@ -314,6 +377,7 @@ void geometricTriversal(cv::Mat& src, const TriversalOperatorType& op) {
 
 #undef GET_NEAREST
 #undef GET_FLOOR
+#undef GET_CUBIC_TOP_LEFT
 
 }//!namespace detail
 
@@ -323,10 +387,24 @@ namespace {
 
 //brief:求取单个点坐标转换后的位置
 //becare:计算方法为M*[x,y,1].t()
-cv::Mat_<double> __getTransformPosition3D(double x, double y, cv::Mat& M) {
+cv::Mat_<double> __getTransformPosition3D(double x, double y, const cv::Mat& M) {
 	double arr[] = { x,y,1. };
 	cv::Mat tmp(3, 1, CV_64FC1, arr);
 	return M * tmp;
+}
+
+//brief:通过平移操作使得所有的有效数据都可以被展示出来
+void __getCompleteIncludeMatrix(cv::Mat& M, cv::Size& size) {
+	double xmin = 0;
+	double ymin = 0;
+
+	size = detail::getSizeAfterWarpAffine(M, size, &xmin, &ymin);
+	
+	cv::Mat_<double> tmp(3,3);
+	tmp << 1, 0, -xmin,
+		0, 1, -ymin,
+		0, 0, 1;
+	M = tmp * M;
 }
 
 }

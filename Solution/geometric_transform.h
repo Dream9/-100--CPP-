@@ -62,6 +62,15 @@ cv::Mat getRotationMatrix2D(const cv::Point& rotation_center,
 	double x_scale, 
 	double y_scale = -1);
 
+//brief:获得经过变换后图像的大小(正好完整显示原始数据)
+//parameter:M:变换矩阵
+//          original_size:原始数据大小
+//          xmin/ymin如非nullptr,则记录变换后的x/y方向最小值，（可以用于偏移图像，使之定位到原点）
+cv::Size getSizeAfterWarpAffine(const cv::Mat& M,
+	const cv::Size& original_size,
+	double* xmin = nullptr,
+	double* ymin = nullptr);
+
 //brief:对图像实施仿射变换，参见cv::wrapAffine
 //parameter:src:输入图像
 //          dst:输出图像，与src具有相同类型
@@ -69,12 +78,15 @@ cv::Mat getRotationMatrix2D(const cv::Point& rotation_center,
 //          size:输出图像尺寸
 //          interpolate_type:插值类型
 //          constant_value:对于变换后超出图像映射范围的默认值
+//          beed_complete_include:若为true,则会重新调整M和size,使得变换后的有效结果恰好完整位于dst之中
+//                               这种调整只会调整平移量，旋转缩放不会改变，用户也可以在外部提前完成此变换
 void warpAffine(const cv::Mat& src,
 	cv::Mat& dst,
-	const cv::Mat& M,
+	cv::Mat& M,
 	cv::Size size,
 	int interpolate_type = detail::INTER_LINEAR,
-	const cv::Scalar& constant_value = cv::Scalar());
+	const cv::Scalar& constant_value = cv::Scalar(),
+	bool need_complete_include = false);
 
 //brief:对图像遍历的封装，在对应位置调用用户传入函数，本函数亦作为其他几何变换的基础操作
 //parameter:src:输入图像
