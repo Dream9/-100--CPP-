@@ -197,10 +197,11 @@ void __MatrixTest(void* first, void* second) {
 			for (int c = 0; c < channels; ++c) {
 				__cout_data(depth, cur);
 				__cout_data(depth_out, cur_out);
-				std::cout << "\r\n";
+				std::cout << "\t";
 				cur += elemsize1;
 				cur_out += elemsize1_out;
 			}
+			std::cout << "\r\n";
 		}
 		std::cout << "----------------\r\n";
 		// you can check this row here
