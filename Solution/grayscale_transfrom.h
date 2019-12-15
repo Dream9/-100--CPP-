@@ -44,8 +44,10 @@ void colorInversion(cv::Mat& src, int max_value = UINT8_MAX);
 //brief:为每个像素值应用用户定义的操作ops
 //paramter:dst:目标对象
 //         ops:用户传入的可调用对象，类型参见定义
+//          not_merge_channel:主要针对部分遍历需要把一个位置处的多个元素值一同处理(比如当作复数)，此时不能拆分他们单独遍历
+//                            默认拆分处理，在计算相位是用当本函数
 //becare:凡是仅涉及到单个像素的操作，基本上都可以通过本接口完成，必然gamma变换、灰度拉伸、均衡化等
-void grayscaleTransform(cv::Mat& src, const GrayScaleOperationType& ops);
+void grayscaleTransform(cv::Mat& src, const GrayScaleOperationType& ops, bool not_merge_channel = false);
 
 //brief:参见cv::convertScaleAbs实现
 //     这里是利用了lambda对象配合grayscalTransform实现

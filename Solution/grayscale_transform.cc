@@ -137,15 +137,18 @@ void colorInversion(cv::Mat& src, int max_value) {
 
 //brief；
 //becare:用户操作可以直接修改/读取每个像素灰度值
-//      只针对CV_8U类型的数据做了特化，也可以考虑采用detail::filter2D的形式扩展其他类型，或者if-else分发
-void grayscaleTransform(cv::Mat& src, const GrayScaleOperationType& ops) {
+//      本函数不提供类型的直接分发处理(数据handler都是uint8_t*)，用户提供的操作ops必须具备不同类型的反射机制，或者ops
+//      能确保以何种类型处理数据
+void grayscaleTransform(cv::Mat& src, const GrayScaleOperationType& ops, bool not_merge_channel) {
 	assert(!src.empty());
-	assert(src.depth() == CV_8U);
+	//assert(src.depth() == CV_8U);//已经扩展
+
+	size_t jumpsize = not_merge_channel ? src.elemSize() : src.elemSize1();//突然发现了为什么opencv要增加这么一个接口，这真的说明c++缺少运行期的类型反射，不得不这样做
 	
 	cv::Size size = src.size();
 	int step = static_cast<int>(src.step);
 	if (src.isContinuous()) {
-		size.width *= size.height * src.channels();
+		size.width *= size.height * (not_merge_channel ? 1 : src.channels());
 		size.height = 1;
 	}
 
@@ -154,7 +157,8 @@ void grayscaleTransform(cv::Mat& src, const GrayScaleOperationType& ops) {
 		auto tmp = cur;
 		for (int j = 0; j < size.width; ++j) {
 			ops(tmp);
-			++tmp;
+			//++tmp;
+			tmp += jumpsize;
 		}
 		cur += step;
 	}

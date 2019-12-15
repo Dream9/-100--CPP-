@@ -41,6 +41,7 @@ enum DftFlags {
         already considered complex. */
     DFT_COMPLEX_INPUT  = 64,
     /** performs an inverse 1D or 2D transform instead of the default forward transform. */
+	//未实现
     //DCT_INVERSE        = DFT_INVERSE,
     /** performs a forward or inverse transform of every individual row of the input
         matrix. This flag enables you to transform multiple vectors simultaneously and can be used to
@@ -49,14 +50,16 @@ enum DftFlags {
     //DCT_ROWS           = DFT_ROWS
 };
 
-//brief:
-//parameter:
+//brief:傅里叶变换以及反变换
+//parameter:src:输入数据
+//          dst:目标
+//          flags:处理方法和输入输出控制，参见opeccv::dft
 void dft(cv::Mat& src, 
 	cv::Mat& dst,
 	int flags = 0);
 
-//brief:
-//parameter:
+//brief:傅里叶反变换
+//parameter:参见opencv::idft
 void idft(cv::Mat& src,
 	cv::Mat& dst,
 	int flags = 0);
@@ -64,8 +67,12 @@ void idft(cv::Mat& src,
 //brief:从傅里叶变换结果中得到幅度谱（傅里叶谱）
 void getAmplitudeSpectrum(cv::Mat& src, cv::Mat& dst);
 
+//brief::从傅里叶变换结果中提取相位谱（相角谱）
+void getPhaseSpectrum(cv::Mat& src, cv::Mat& dst);
+
 //brief:拉伸傅里叶谱的灰度级，便于显示,默认返回CV_8U深度的结果
 cv::Mat grayscaleAmplitudeSpctrum(cv::Mat& spectrum);
+
 }
 
 

@@ -358,18 +358,19 @@ void warpAffine(const cv::Mat& src, cv::Mat& dst, cv::Mat& M, cv::Size size,
 
 //brief：逐个元素遍历，同时将位置信息传给用户
 //     主要是把遍历的过程解耦出来
+//becare；数据类的反射处理交由op完成，类同于grayscaleTransfrom
 void geometricTriversal(cv::Mat& src, const TriversalOperatorType& op) {
 	cv::Size size = src.size();
 	int step = static_cast<int>(src.step);
 
 	uint8_t* cursor = src.data;
-	int channels = src.channels();
+	size_t elemsize = src.elemSize();
 	for (int y = 0; y < size.height; ++y) {
 		auto tmp = cursor;
 		for (int x = 0; x < size.width; ++x) {
 			op(x, y, tmp);
 			//++tmp;
-			tmp += channels;
+			tmp += elemsize;
 		}
 		cursor += step;
 	}
