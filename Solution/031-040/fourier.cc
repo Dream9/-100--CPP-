@@ -6,7 +6,7 @@
 
 namespace digital {
 
-//brief:测试了正反变换，并计算了傅里叶谱
+//brief:测试了正反变换，并计算了傅里叶谱和相角谱
 //     具体实现为与fourier.[h/cc]
 void Fourier::operator()() {
 	cv::Mat data = cv::imread(getPath(), cv::IMREAD_GRAYSCALE);
@@ -24,11 +24,11 @@ void Fourier::operator()() {
 #ifdef USE_OPENCVLIB
 	cv::Mat test;
 	cv::dft(data_64f, test, cv::DFT_COMPLEX_OUTPUT);
-	img = test;
+	//img = test;
 #else
 	detail::dft(data_64f, img, detail::DFT_COMPLEX_OUTPUT);
-#endif
 
+#endif
 	//for test
 	//__MatrixTest(&test, &img);
 
@@ -42,13 +42,32 @@ void Fourier::operator()() {
 	else
 		show(&out,"Amplitude Spectrum");
 
+	//show phase
+	cv::Mat phase;
+#ifdef USE_OPENCVLIB
+	std::vector<cv::Mat> vec;
+	cv::split(img, vec);
+	cv::phase(vec[0], vec[1], phase);
+#else
+	detail::getPhaseSpectrum(img, phase);
+#endif
+	//for test
+	//__MatrixTest(&phase, &ttt);
+
+	if (needShowOriginal())
+		show(&data, &phase, "Phase Spectrum");
+	else
+		show(&phase,"Phase Spectrum");
+
 	//inverse fourier transform
 #ifdef USE_OPENCVLIB
 	cv::dft(img, idft_img, cv::DFT_SCALE | cv::DFT_INVERSE | cv::DFT_REAL_OUTPUT);
 #else
 	detail::dft(img, idft_img, detail::DFT_INVERSE | detail::DFT_SCALE | detail::DFT_REAL_OUTPUT);
 #endif
-
+    //for test
+	//__MatrixTest(&test, &idft_img);
+	
 	idft_img.convertTo(idft_img, CV_8U);
 
 	if (needShowOriginal())
