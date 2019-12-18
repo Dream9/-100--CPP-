@@ -111,7 +111,7 @@
 #include"Solution/021-030/bicubic_interpolation.h"
 #endif
 
-#define NO_031
+#define NO_035
 //#define NO_030
 //#define NO_029
 //#define NO_028
@@ -119,6 +119,24 @@
 #if (defined NO_028) || (defined NO_029) || (defined NO_030) || (defined NO_031)
 #include"Solution/021-030/affine_transformation.h"
 #endif
+
+#ifdef NO_032
+#include"Solution/031-040/fourier.h"
+#endif
+
+#ifdef NO_033
+#include"Solution/031-040/frequency_domain_filter_low_pass.h"
+#endif
+
+#ifdef NO_034
+#include"Solution/031-040/frequency_domain_filter_high_pass.h"
+#endif
+
+#ifdef NO_035
+#include"Solution/031-040/frequency_domain_filter_band.h"
+#include"Solution/031-040/notch_filter.h"
+#endif
+
 
 
 

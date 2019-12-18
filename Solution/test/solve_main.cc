@@ -233,6 +233,46 @@ int main(int argc, char** argv) {
 	Solve(at028);
 #endif
 
+
+#ifdef NO_032
+	Fourier fr032("rectangle.jpg",
+					true); 
+	Solve(fr032);
+#endif
+
+#ifdef NO_033
+	FrequencyDomainFilterLowPass fdflp033("rectangle.jpg",
+					FrequencyDomainFilterLowPass::BLPF,
+					true); 
+	Solve(fdflp033);
+#endif
+
+#ifdef NO_034
+	FrequencyDomainFilterHighPass fdfhp034("rectangle.jpg",
+					FrequencyDomainFilterHighPass::GHPF,
+					true); 
+	Solve(fdfhp034);
+#endif
+
+#ifdef NO_035
+	FrequencyDomainFilterBand fdfb035("rectangle.jpg",
+					FrequencyDomainFilterBand::BR,
+					true); 
+	Solve(fdfb035);
+#endif
+
+#ifdef NO_035
+	coutInfo("不在100问之列，但是是一种很有必要了解的一种滤波手段");
+	NotchFilter nf0XX("rectangle.jpg",
+					true); 
+	Solve(nf0XX);
+#endif
+
+
+
+
+
+
 }
 
 #undef CHECK_ZERO
