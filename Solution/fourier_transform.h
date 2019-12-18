@@ -1,4 +1,4 @@
-//brief:本文件提供有关频率域变换有关的功能封装
+//brief:本文件提供有关频率域变换有关的功能封装,包括频率域滤波
 
 #ifndef _SOLUTION_FOURIER_TRANSFORM_H_
 #define _SOLUTION_FOURIER_TRANSFORM_H_
@@ -50,6 +50,23 @@ enum DftFlags {
     //DCT_ROWS           = DFT_ROWS
 };
 
+enum FrequencyFilterFlags {
+	ILPF = 0x1,      //理想低通
+	BLPF = 0x1 << 1, //巴特沃斯低通
+	GLPF = 0x1 << 2, //高斯低通
+
+	IHPF = 0x1 << 3, //理想高通
+	BHPF = 0x1 << 4, //巴特沃斯高通
+	GHPF = 0x1 << 5, //高斯高通
+
+	//TODO:这里只实现了采用巴特沃斯函数的带通（阻）滤波器，增加其他的扩展
+	BP = 0x1 << 6,  //巴特沃斯带通
+	BR = 0x1 << 7,  //巴特沃斯带阻
+
+	//TODO:采用其他形式的陷波函数，目前采用的是理想滤波器，存在振铃
+	NOTCH = 0x1 << 8,
+};
+
 //brief:傅里叶变换以及反变换
 //parameter:src:输入数据
 //          dst:目标
@@ -64,6 +81,14 @@ void idft(cv::Mat& src,
 	cv::Mat& dst,
 	int flags = 0);
 
+//brief:快速傅里叶变换
+//parameter:参见opencv::dft，
+//becare:这里仅仅是封装了getOptimalDFTSize，然后转调opencv接口
+//       用户需要自行截取多余部分数据
+void fft(cv::Mat& src,
+	cv::Mat& dst,
+	int flags = 0);
+
 //brief:从傅里叶变换结果中得到幅度谱（傅里叶谱）
 void getAmplitudeSpectrum(cv::Mat& src, cv::Mat& dst);
 
@@ -72,6 +97,20 @@ void getPhaseSpectrum(cv::Mat& src, cv::Mat& dst);
 
 //brief:拉伸傅里叶谱的灰度级，便于显示,默认返回CV_8U深度的结果
 cv::Mat grayscaleAmplitudeSpctrum(cv::Mat& spectrum);
+
+//brief:得到零频中心位于中央的图像，原理是exp[(2*PI*x(M/2)*x/M)i] == pow(-1.,x),可以让
+//     频谱移动M/2,2D类似1D
+cv::Mat centralize(cv::Mat& src);
+
+//brief:频率域滤波器
+//paramter:src,等待变换的频率域图像描述，要求必须有两个通带，代表复数
+//         dst:数据存储地点
+//         flags:执行的操作
+//         data:提供不同操作需要的有效数据
+void frequencyDomainFilter(cv::Mat& src,
+	cv::Mat& dst,
+	int flags = 0,
+	void* data = nullptr);
 
 }
 

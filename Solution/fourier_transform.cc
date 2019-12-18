@@ -4,6 +4,9 @@
 #include"Solution/geometric_transform.h"
 
 #include<opencv2/imgproc.hpp>
+#include<opencv2/highgui.hpp>
+
+#include<unordered_map>
 
 //brief:以下函数对用户隐藏
 namespace {
@@ -49,7 +52,108 @@ void __complexFourier_real(double* iter, double*& cursor, double theta, int step
 void __dft_row(cv::Mat& src, cv::Mat& tmp, double factor_inverse, double scale, FourierOperationType op);
 void __dft_column(cv::Mat& src, cv::Mat& tmp, double factor_inverse, double scale, FourierOperationType op);
 
+//brief:以工厂模式替换if-else
+class FDF_factory;
+std::unordered_map<int, FDF_factory*> dict;
+
+class FDF_factory{
+public:
+	static FDF_factory* create(int type) {
+		auto iter = dict.find(type);
+		if (iter == dict.end())
+			return nullptr;
+		return iter->second;
+	}
+	virtual void operator()(cv::Mat&, cv::Mat&, void*) = 0;
+};
+
+class Ilpf:public FDF_factory{
+public:
+	void operator()(cv::Mat&, cv::Mat&, void*) override;
+};
+
+class Blpf:public FDF_factory{
+public:
+	void operator()(cv::Mat&, cv::Mat&, void*) override;
+};
+
+class Glpf:public FDF_factory{
+public:
+	void operator()(cv::Mat&, cv::Mat&, void*) override;
+};
+
+class Ihpf:public FDF_factory{
+public:
+	void operator()(cv::Mat&, cv::Mat&, void*) override;
+};
+
+class Bhpf:public FDF_factory{
+public:
+	void operator()(cv::Mat&, cv::Mat&, void*) override;
+};
+
+class Ghpf:public FDF_factory{
+public:
+	void operator()(cv::Mat&, cv::Mat&, void*) override;
+};
+
+class Bbpf :public FDF_factory {
+public:
+	void operator()(cv::Mat&, cv::Mat&, void*)override;
+};
+
+class Bbrf :public FDF_factory {
+public:
+	void operator()(cv::Mat&, cv::Mat&, void*)override;
+};
+
+class Notch :public FDF_factory {
+public:
+	void operator()(cv::Mat&, cv::Mat&, void*)override;
+	static void __on_mouse(int event, int x, int y, int, void*);
+};
+
+//brief:用于初始化状态
+class Init {
+public:
+	Init() {
+		dict.insert({ detail::ILPF,new Ilpf});
+		dict.insert({ detail::BLPF,new Blpf});
+		dict.insert({ detail::GLPF,new Glpf});
+		
+		dict.insert({ detail::IHPF,new Ihpf});
+		dict.insert({ detail::BHPF,new Bhpf});
+		dict.insert({ detail::GHPF,new Ghpf});
+
+
+		dict.insert({ detail::BP,new Bbpf});
+		dict.insert({ detail::BR,new Bbrf});
+
+		dict.insert({ detail::NOTCH, new Notch });
+
+	}
+};
+
+static Init _init_object;
+
+//brief:从两个点中构建Rect
+inline cv::Rect __getRectFromPoint(cv::Point p1, cv::Point p2) {
+	int minx = MIN(p1.x,p2.x);
+	int width = abs(p1.x - p2.x);
+	
+	int miny = MIN(p1.y,p2.y);
+	int height = abs(p1.y - p2.y);
+
+	return cv::Rect(minx, miny, width, height);
 }
+
+//brief:得到关于中心的点对称的另一个Rect，用于保证陷波滤波器的原点对称性
+inline cv::Rect __getSymmetryRect(cv::Rect rect, cv::Point center) {
+	return cv::Rect(2 * center.x - rect.x - rect.width, 2 * center.y - rect.y - rect.height, rect.width, rect.height);
+}
+
+
+}//!namespace
 
 namespace detail {
 
@@ -173,6 +277,22 @@ void idft(cv::Mat& src, cv::Mat& dst, int flags) {
 	detail::dft(src, dst, flags | detail::DFT_INVERSE | detail::DFT_REAL_OUTPUT);
 }
 
+//brief:FFT
+void fft(cv::Mat& src, cv::Mat& dst, int flags) {
+	cv::Size size = src.size();
+	size.width = cv::getOptimalDFTSize(size.width);
+	size.height = cv::getOptimalDFTSize(size.height);
+
+	//填充补零
+	cv::Mat tmp;
+	cv::copyMakeBorder(src, tmp, 0, size.height - src.rows, 0, size.width - src.cols, cv::BORDER_CONSTANT, cv::Scalar::all(0));
+	cv::dft(tmp, dst, flags, src.rows);//节省计算
+
+	//逆变换后需要用户自行去除补零部分！！！
+	//dst = dst(cv::Rect(0, 0, src.cols, src. rows));
+}
+
+
 //brief:从傅里叶变换结果中得到幅度谱（傅里叶谱）
 void getAmplitudeSpectrum(cv::Mat& src, cv::Mat& dst) {
 	assert(src.channels() == COMPLEX_CHANNEL_NUMBER);
@@ -220,6 +340,36 @@ cv::Mat grayscaleAmplitudeSpctrum(cv::Mat& spectrum) {
 	return dst;
 }
 
+//brief:移频
+//becare:要求必须未CV_64F
+cv::Mat centralize(cv::Mat& src) {
+	assert(src.depth() == CV_64FC1);
+	assert(src.isContinuous());
+
+	cv::Mat dst(src.size(), src.type());
+	double* iter = dst.ptr<double>(0, 0);
+
+	auto make_center = [&](int x, int y, uint8_t* cursor) {
+		double cur = *reinterpret_cast<double*>(cursor);
+		*iter = cur * (((x + y) & 0x1) ? -1. : 1.);//等价于pow(-1.,(x+y))
+		++iter;
+	};
+
+	detail::geometricTriversal(src, make_center);
+
+	return dst;
+}
+
+//brief:频率域常见滤波
+void frequencyDomainFilter(cv::Mat& src, cv::Mat& dst, int flags, void* data) {
+	FDF_factory* lp = FDF_factory::create(flags);
+	if (lp == nullptr) {
+		dealException(digital::kParameterNotMatch);
+		return;
+	}
+
+	lp->operator()(src, dst, data);
+}
 
 }//!namespace detail
 
@@ -292,8 +442,318 @@ void __dft_column(cv::Mat& src, cv::Mat& dst, double factor_inverse, double scal
 				*iter++ *= scale;
 		}
 	}
-
 }
 
+
+#define CENTER_DISTANCE(x,x1,y,y1) std::sqrt((x-x1)*(x-x1) + (y-y1)*(y-y1))
+
+//brief：理想低通滤波，存在明显的振铃现象
+void Ilpf::operator()(cv::Mat& src, cv::Mat& dst, void* data) {
+	assert(src.channels() == 2);
+	assert(src.isContinuous());
+	assert(src.depth() == CV_64F);
+
+	dst.create(src.size(), src.type());
+	double* ptr = dst.ptr<double>(0, 0);
+
+	double threshold = *reinterpret_cast<double*>(data);
+	double half_x = src.cols * 0.5;
+	double half_y = src.rows * 0.5;
+
+	//FIXME:考虑到中心化后这是一个高度对称的结构，没有必要完全遍历一遍
+	auto ilpf = [&ptr, threshold, half_x, half_y](int x, int y, uint8_t* cursor) {
+		double* iter = reinterpret_cast<double*>(cursor);
+		double D = CENTER_DISTANCE(x, half_x, y, half_y);
+		if (D <= threshold) {
+			*ptr = *iter;
+			*(ptr + 1) = *(iter + 1);
+			ptr += 2;
+			return;
+		}
+
+		*ptr = 0.;
+		*(ptr + 1) = 0.;
+		ptr += 2;
+	};
+
+	detail::geometricTriversal(src, ilpf);
+}
+
+//brief：巴特沃斯低通滤波，推荐n=2，n->无穷，则退化为理想低通
+void Blpf::operator()(cv::Mat& src, cv::Mat& dst, void* data) {
+	assert(src.channels() == 2);
+	assert(src.isContinuous());
+	assert(src.depth() == CV_64F);
+
+	dst.create(src.size(), src.type());
+	double* ptr = dst.ptr<double>(0, 0);
+
+	double* arr = reinterpret_cast<double*>(data);
+	double d = arr[0];
+	double n = arr[1];
+	double half_x = src.cols * 0.5;
+	double half_y = src.rows * 0.5;
+
+	//FIXME:考虑到中心化后这是一个高度对称的结构，没有必要完全都遍历一遍
+	auto blpf = [&ptr, half_x, half_y, d, n](int x, int y, uint8_t* cursor) {
+		double D = CENTER_DISTANCE(x, half_x, y, half_y);
+
+		double h = 1 / (1 + std::pow(( D / d), n));
+		double* iter = reinterpret_cast<double*>(cursor);
+
+		*ptr = *iter * h;
+		*(ptr + 1) =*(iter+1) * h;
+		ptr += 2;
+	};
+
+	detail::geometricTriversal(src, blpf);
+}
+
+//brief：高斯低通滤波，在sigma处，频率下降到0.607，不存在振铃现象
+void Glpf::operator()(cv::Mat& src, cv::Mat& dst, void* data) {
+	assert(src.channels() == 2);
+	assert(src.isContinuous());
+	assert(src.depth() == CV_64F);
+
+	dst.create(src.size(), src.type());
+	double* ptr = dst.ptr<double>(0, 0);
+
+	double sigma = *reinterpret_cast<double*>(data);
+	double half_x = src.cols * 0.5;
+	double half_y = src.rows * 0.5;
+
+	//FIXME:考虑到中心化后这是一个高度对称的结构，没有必要完全都遍历一遍
+	auto blpf = [&ptr, half_x, half_y, sigma](int x, int y, uint8_t* cursor) {
+		double D = CENTER_DISTANCE(x, half_x, y, half_y);
+
+		double h = std::exp(-D*D*0.5/sigma/sigma);
+		double* iter = reinterpret_cast<double*>(cursor);
+
+		*ptr = *iter * h;
+		*(ptr + 1) =*(iter+1) * h;
+		ptr += 2;
+	};
+
+	detail::geometricTriversal(src, blpf);
+}
+
+//brief：理想高通滤波，存在明显的振铃现象
+void Ihpf::operator()(cv::Mat& src, cv::Mat& dst, void* data) {
+	assert(src.channels() == 2);
+	assert(src.isContinuous());
+	assert(src.depth() == CV_64F);
+
+	dst.create(src.size(), src.type());
+	double* ptr = dst.ptr<double>(0, 0);
+
+	double threshold = *reinterpret_cast<double*>(data);
+	double half_x = src.cols * 0.5;
+	double half_y = src.rows * 0.5;
+
+	//FIXME:考虑到中心化后这是一个高度对称的结构，没有必要完全遍历一遍
+	auto ilpf = [&ptr, threshold, half_x, half_y](int x, int y, uint8_t* cursor) {
+		double* iter = reinterpret_cast<double*>(cursor);
+		double D = CENTER_DISTANCE(x, half_x, y, half_y);
+		if (D > threshold) {
+			*ptr = *iter;
+			*(ptr + 1) = *(iter + 1);
+			ptr += 2;
+			return;
+		}
+
+		*ptr = 0.;
+		*(ptr + 1) = 0.;
+		ptr += 2;
+	};
+
+	detail::geometricTriversal(src, ilpf);
+}
+
+//brief：巴特沃斯高通滤波，推荐n=2，n->无穷，则退化为理想高通
+void Bhpf::operator()(cv::Mat& src, cv::Mat& dst, void* data) {
+	assert(src.channels() == 2);
+	assert(src.isContinuous());
+	assert(src.depth() == CV_64F);
+
+	dst.create(src.size(), src.type());
+	double* ptr = dst.ptr<double>(0, 0);
+
+	double* arr = reinterpret_cast<double*>(data);
+	double d = arr[0];
+	double n = arr[1];
+	double half_x = src.cols * 0.5;
+	double half_y = src.rows * 0.5;
+
+	//FIXME:考虑到中心化后这是一个高度对称的结构，没有必要完全都遍历一遍
+	auto blpf = [&ptr, half_x, half_y, d, n](int x, int y, uint8_t* cursor) {
+		double D = CENTER_DISTANCE(x, half_x, y, half_y);
+
+		double h = 1 / (1 + std::pow(( d / D), n));
+		double* iter = reinterpret_cast<double*>(cursor);
+
+		*ptr = *iter * h;
+		*(ptr + 1) =*(iter+1) * h;
+		ptr += 2;
+	};
+
+	detail::geometricTriversal(src, blpf);
+}
+
+//brief：高斯高通滤波，在sigma处，频率下降到0.607，不存在振铃现象
+void Ghpf::operator()(cv::Mat& src, cv::Mat& dst, void* data) {
+	assert(src.channels() == 2);
+	assert(src.isContinuous());
+	assert(src.depth() == CV_64F);
+
+	dst.create(src.size(), src.type());
+	double* ptr = dst.ptr<double>(0, 0);
+
+	double sigma = *reinterpret_cast<double*>(data);
+	double half_x = src.cols * 0.5;
+	double half_y = src.rows * 0.5;
+
+	//FIXME:考虑到中心化后这是一个高度对称的结构，没有必要完全都遍历一遍
+	auto blpf = [&ptr, half_x, half_y, sigma](int x, int y, uint8_t* cursor) {
+		double D = CENTER_DISTANCE(x, half_x, y, half_y);
+
+		double h = 1 - std::exp(-D*D*0.5/sigma/sigma);
+		double* iter = reinterpret_cast<double*>(cursor);
+
+		*ptr = *iter * h;
+		*(ptr + 1) =*(iter+1) * h;
+		ptr += 2;
+	};
+
+	detail::geometricTriversal(src, blpf);
+}
+
+//brief：巴特沃斯带通滤波，推荐n=2，n->无穷，则退化为理想高通
+void Bbpf::operator()(cv::Mat& src, cv::Mat& dst, void* data) {
+	assert(src.channels() == 2);
+	assert(src.isContinuous());
+	assert(src.depth() == CV_64F);
+
+	dst.create(src.size(), src.type());
+	double* ptr = dst.ptr<double>(0, 0);
+
+	double* arr = reinterpret_cast<double*>(data);
+	double d = arr[0];
+	double n = arr[1];
+	double width = arr[2];
+
+	double half_x = src.cols * 0.5;
+	double half_y = src.rows * 0.5;
+
+	//FIXME:考虑到中心化后这是一个高度对称的结构，没有必要完全都遍历一遍
+	auto blpf = [&ptr, half_x, half_y, d, n, width](int x, int y, uint8_t* cursor) {
+		double D = CENTER_DISTANCE(x, half_x, y, half_y);
+
+		double h = 1 - 1 / (1 + std::pow((width * D / (D*D - d*d) ), n));
+		double* iter = reinterpret_cast<double*>(cursor);
+
+		*ptr = *iter * h;
+		*(ptr + 1) =*(iter+1) * h;
+		ptr += 2;
+	};
+
+	detail::geometricTriversal(src, blpf);
+}
+
+//brief：巴特沃斯带阻滤波，推荐n=2，n->无穷，则退化为理想高通
+void Bbrf::operator()(cv::Mat& src, cv::Mat& dst, void* data) {
+	assert(src.channels() == 2);
+	assert(src.isContinuous());
+	assert(src.depth() == CV_64F);
+
+	dst.create(src.size(), src.type());
+	double* ptr = dst.ptr<double>(0, 0);
+
+	double* arr = reinterpret_cast<double*>(data);
+	double d = arr[0];
+	double n = arr[1];
+	double width = arr[2];
+
+	double half_x = src.cols * 0.5;
+	double half_y = src.rows * 0.5;
+
+	//FIXME:考虑到中心化后这是一个高度对称的结构，没有必要完全都遍历一遍
+	auto blpf = [&ptr, half_x, half_y, d, n, width](int x, int y, uint8_t* cursor) {
+		double D = CENTER_DISTANCE(x, half_x, y, half_y);
+
+		double h = 1 / (1 + std::pow((width * D / (D*D - d*d) ), n));
+		double* iter = reinterpret_cast<double*>(cursor);
+
+		*ptr = *iter * h;
+		*(ptr + 1) =*(iter+1) * h;
+		ptr += 2;
+	};
+
+	detail::geometricTriversal(src, blpf);
+}
+
+//brief:用户自定义的陷波滤波器
+//     左键按下表示陷波的一点，左键抬起表示陷波的另一点
+void Notch::operator()(cv::Mat& src, cv::Mat& dst, void* data) {
+	assert(src.channels() == 2);
+	assert(src.isContinuous());
+	assert(src.depth() == CV_64F);
+
+	bool need_symmetry = data == nullptr;//默认是对称的
+	cv::Point center(src.cols >> 1, src.rows >> 1);
+	cv::Rect TheBiggestRect(0, 0, src.cols, src.rows);
+
+	cv::Mat spectrum;
+	detail::getAmplitudeSpectrum(src, spectrum);
+	spectrum = detail::grayscaleAmplitudeSpctrum(spectrum);
+
+	src.copyTo(dst);
+	cv::Point pts[3];//第三个point仅用来作为一个状态标识
+
+	const string name = "select notch area, esc for accomplished";
+	cv::namedWindow(name, CV_WINDOW_NORMAL);
+	cv::setMouseCallback(name, Notch::__on_mouse, pts);
+
+	//esc 完成自定义
+	while (true) {
+		if (pts[2].x == 2) {
+			cv::Rect rect = __getRectFromPoint(pts[0], pts[1]) & TheBiggestRect;
+			dst(rect).setTo(cv::Scalar::all(0));
+			spectrum(rect).setTo(cv::Scalar::all(0));
+			if (need_symmetry) {
+				cv::Rect symmetry_rect = __getSymmetryRect(rect, center) & TheBiggestRect; //becare:防止溢出
+				dst(symmetry_rect).setTo(cv::Scalar::all(0));
+				spectrum(symmetry_rect).setTo(cv::Scalar::all(0));
+			}
+			pts[2].x = 0;//复原状态
+		}
+
+		//memset(pts, 0, sizeof pts);
+
+		cv::imshow(name, spectrum);
+		if (cv::waitKey(10) == 27)
+			break;
+	}
+}
+
+void Notch::__on_mouse(int event, int x, int y, int, void* userdata) {
+	cv::Point* point = static_cast<cv::Point*>(userdata);
+	switch (event)
+	{
+	case CV_EVENT_LBUTTONDOWN:
+		point[0].x = x;
+		point[0].y = y;
+		point[2].x = 1;//正在构建滤波器
+		break;
+	case CV_EVENT_LBUTTONUP:
+		point[1].x = x;
+		point[1].y = y;
+		point[2].x = 2;//完成构建滤波器
+		break;
+	default:
+		break;
+	}
+}
+
+#undef CENTER_DISTANCE
 
 }//!namespace
