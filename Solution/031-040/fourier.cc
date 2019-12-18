@@ -17,10 +17,13 @@ void Fourier::operator()() {
 	cv::Mat data_64f;
 	data.convertTo(data_64f, CV_64F);
 
+	//ÒÆÆµ
+	data_64f = detail::centralize(data_64f);
+
 	cv::Mat img;
 	cv::Mat idft_img;
 
-	//forward fourier transform
+	////////////////////////forward fourier transform
 #ifdef USE_OPENCVLIB
 	cv::Mat test;
 	cv::dft(data_64f, test, cv::DFT_COMPLEX_OUTPUT);
@@ -32,7 +35,7 @@ void Fourier::operator()() {
 	//for test
 	//__MatrixTest(&test, &img);
 
-	//show Spectrum
+	////////////////////////show Spectrum
 	cv::Mat spectrum;
 	detail::getAmplitudeSpectrum(img, spectrum);
 	cv::Mat out = detail::grayscaleAmplitudeSpctrum(spectrum);
@@ -42,7 +45,7 @@ void Fourier::operator()() {
 	else
 		show(&out,"Amplitude Spectrum");
 
-	//show phase
+	/////////////////////////show phase
 	cv::Mat phase;
 #ifdef USE_OPENCVLIB
 	std::vector<cv::Mat> vec;
@@ -53,13 +56,14 @@ void Fourier::operator()() {
 #endif
 	//for test
 	//__MatrixTest(&phase, &ttt);
+	cv::normalize(phase, phase, 1, 255, cv::NORM_MINMAX, CV_8U);
 
 	if (needShowOriginal())
 		show(&data, &phase, "Phase Spectrum");
 	else
 		show(&phase,"Phase Spectrum");
 
-	//inverse fourier transform
+	////////////////////////inverse fourier transform
 #ifdef USE_OPENCVLIB
 	cv::dft(img, idft_img, cv::DFT_SCALE | cv::DFT_INVERSE | cv::DFT_REAL_OUTPUT);
 #else
@@ -67,7 +71,10 @@ void Fourier::operator()() {
 #endif
     //for test
 	//__MatrixTest(&test, &idft_img);
-	
+
+	//ÒÆÆµ
+	idft_img = detail::centralize(idft_img);
+
 	idft_img.convertTo(idft_img, CV_8U);
 
 	if (needShowOriginal())
