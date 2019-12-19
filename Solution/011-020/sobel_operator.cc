@@ -11,11 +11,11 @@
 
 namespace digital {
 
-//brief:Sobel Ëã×ÓÓĞÁ½¸ö£¬Ò»¸öÊÇ¼ì²âË®Æ½±ßÔµµÄ £»ÁíÒ»¸öÊÇ¼ì²â´¹Ö±±ßÔµµÄ ¡£
-//     ÓëPrewittËã×ÓÏà±È£¬SobelËã×Ó¶ÔÓÚÏóËØµÄÎ»ÖÃµÄÓ°Ïì×öÁË¼ÓÈ¨£¬¿ÉÒÔ½µµÍ±ßÔµÄ£ºı³Ì¶È
-//becare:Ê¹ÓÃ¸ü´óµÄ´°¿Ú£¬ÒâÎ¶×Å²ÉÈ¡¸ü¸ßµÄÄ£ºı
+//brief:Sobel ç®—å­æœ‰ä¸¤ä¸ªï¼Œä¸€ä¸ªæ˜¯æ£€æµ‹æ°´å¹³è¾¹ç¼˜çš„ ï¼›å¦ä¸€ä¸ªæ˜¯æ£€æµ‹å‚ç›´è¾¹ç¼˜çš„ ã€‚
+//     ä¸Prewittç®—å­ç›¸æ¯”ï¼ŒSobelç®—å­å¯¹äºè±¡ç´ çš„ä½ç½®çš„å½±å“åšäº†åŠ æƒï¼Œå¯ä»¥é™ä½è¾¹ç¼˜æ¨¡ç³Šç¨‹åº¦
+//becare:ä½¿ç”¨æ›´å¤§çš„çª—å£ï¼Œæ„å‘³ç€é‡‡å–æ›´é«˜çš„æ¨¡ç³Š
 void SobelOperator::operator()() {
-    //×ªÎª»Ò¶È²¢½µÔë
+    //è½¬ä¸ºç°åº¦å¹¶é™å™ª
 	cv::Mat data = cv::imread(getPath(), cv::IMREAD_GRAYSCALE);
 	if(data.empty()) {
 		dealException(kFileError);
@@ -27,14 +27,14 @@ void SobelOperator::operator()() {
 
 #ifdef USE_OPENCVLIB
 
-	//´ËÍâÄÚ²¿»¹Ìá¹©Ò»ÖÖScharrµÄÊµÏÖ£¬ÆäÌá¹©¸ü¸ß¾«¶ÈµÄÒ»½×Î¢·Ö½üËÆ£¬ÊÇ¶ÔSobelµÄÓÅ»¯
+	//æ­¤å¤–å†…éƒ¨è¿˜æä¾›ä¸€ç§Scharrçš„å®ç°ï¼Œå…¶æä¾›æ›´é«˜ç²¾åº¦çš„ä¸€é˜¶å¾®åˆ†è¿‘ä¼¼ï¼Œæ˜¯å¯¹Sobelçš„ä¼˜åŒ–
 	cv::Sobel(data, img_x, CV_16S, 1, 0, win_);
 	//or use cv::filter2D
 	
 	cv::Sobel(data, img_y, CV_16S, 0, 1, win_);
 
 #else
-	//×î³õ²ÉÓÃ¹Ì¶¨µÄ¿Õ¼äÂË²¨ºËµÄÊµÏÖ·½Ê½
+	//æœ€åˆé‡‡ç”¨å›ºå®šçš„ç©ºé—´æ»¤æ³¢æ ¸çš„å®ç°æ–¹å¼
 	//int filter_x[] = {
 	//	-1, 0, 1,
 	//	-2, 0, 2,
@@ -46,31 +46,16 @@ void SobelOperator::operator()() {
 	//	0, 1, 0,
 	//	1, 2, 1 };
 	//detail::filter2D<CV_8U, CV_16S, int>(data, img_y, filter_y, 3, 3, false, true);
-	
-	//¸ù¾İ´°¿Ú´óĞ¡¾ö¶¨Ëã×Ó
-	//ÀûÓÃº¯ÊıµÃµ½Æ½»¬Ëã×Ó
-	cv::Mat smooth_kernel;
-	cv::flip(detail::getSmoothKernel(win_), smooth_kernel, -1);
-	//ÀûÓÃº¯ÊıµÃµ½²î·ÖËã×Ó
-	cv::Mat diff_kernel;
-	cv::flip(detail::getSobelDifference(win_), diff_kernel, -1);
 
-#ifndef NDEBUG
-	//for test
-	std::vector<int> v = std::vector<int>(smooth_kernel);
-	std::vector<int> v2 = std::vector<int>(diff_kernel);
+	detail::Sobel(data, img_x, CV_16S, 1, 0, win_);
+	detail::Sobel(data, img_y, CV_16S, 0, 1, win_);
 #endif
 
-	cv::sepFilter2D(data, img_x, CV_16S, smooth_kernel, diff_kernel.t());
-	cv::sepFilter2D(data, img_y, CV_16S, diff_kernel, smooth_kernel.t());
-
-#endif
-
-	//ÖØĞÂ±ê¶¨
+	//é‡æ–°æ ‡å®š
 	cv::convertScaleAbs(img_x, img_x, 1, 128);
 	cv::convertScaleAbs(img_y, img_y, 1, 128);
 
-	//½üËÆÌİ¶È
+	//è¿‘ä¼¼æ¢¯åº¦
 	cv::Mat gradient;
 	cv::addWeighted(img_x, 0.5, img_y, 0.5, 0, gradient);
 
