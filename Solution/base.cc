@@ -103,5 +103,30 @@ void sepConvolution2D(const cv::Mat& src,
 	cv::sepFilter2D(src, dst, ddepth, flip_kx, flip_ky, p, 0.0, bordertype);
 }
 
+//brief:d
+void Sobel(cv::Mat& src, cv::Mat& dst, int ddepth, int dx, int dy, int win) {
+	assert((win & 0x1) == 0x1);
+
+	cv::Mat smooth_kernel;
+	cv::flip(detail::getSmoothKernel(win), smooth_kernel, -1);
+	//利用函数得到差分算子
+	cv::Mat diff_kernel;
+	cv::flip(detail::getSobelDifference(win), diff_kernel, -1);
+
+#ifndef NDEBUG
+	//for test
+	std::vector<int> v = std::vector<int>(smooth_kernel);
+	std::vector<int> v2 = std::vector<int>(diff_kernel);
+#endif
+
+	if(dx)
+		cv::sepFilter2D(src, dst, CV_16S, smooth_kernel, diff_kernel.t());
+
+	if(dx==0 && dy)
+		cv::sepFilter2D(src, dst, CV_16S, diff_kernel, smooth_kernel.t());
+
+}
+
+
 
 }//!namespace detail

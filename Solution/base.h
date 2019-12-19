@@ -320,6 +320,15 @@ void filter2DNonLinear(cv::Mat& data,
 }
 
 
+//brief:soble算子的封装
+//parameter:参见opencv::Sobel
+void Sobel(cv::Mat& src, 
+	cv::Mat& dst, 
+	int ddepth, 
+	int dx, 
+	int dy = 0,
+	int win = 3);
+
 
 }//!namespace detail
 
