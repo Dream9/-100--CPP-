@@ -227,6 +227,7 @@ void filter2D(cv::Mat& data,
 				auto tmp = iter;
 				for (int y = 0; y < win_c; ++y) {
 					for (int cn = 0; cn < kChannels; ++cn) {
+						//digital::__printInfo("%u,%d,ans=%d   ", tmp[cn], filter[n],tmp[cn]*filter[n]);
 						rgba[cn] += cv::saturate_cast<Ty>(tmp[cn] * filter[n]);
 					}
 
@@ -321,7 +322,11 @@ void filter2DNonLinear(cv::Mat& data,
 
 
 //brief:soble算子的封装
-//parameter:参见opencv::Sobel
+//parameter: src:目标图像
+//           dst:存储目标
+//           dx:x方向差分
+//           dy:y方向差分
+//           win:窗口大小
 void Sobel(cv::Mat& src, 
 	cv::Mat& dst, 
 	int ddepth, 
@@ -329,6 +334,19 @@ void Sobel(cv::Mat& src,
 	int dy = 0,
 	int win = 3);
 
+//brief:Canny算子
+//parameter：src:目标图像
+//           dst:存储位置
+//           threshold_1:低阈值
+//           threshold_2:高阈值
+//           apertureSize:内嵌Sobel的窗口大小
+//           useL2gradient:默认为false,梯度通过L1范式计算，快且为线性算子；为true时，采用L2范式计算，更精确，但非线性算子
+void Canny(cv::Mat& src,
+	cv::Mat& dst,
+	double threshold_1,
+	double threshold_2,
+	int apertureSize = 3,
+	bool useL2gradient = false);
 
 }//!namespace detail
 
