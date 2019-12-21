@@ -11,11 +11,11 @@
 
 namespace digital {
 
-//brief:Sobel ç®—å­æœ‰ä¸¤ä¸ªï¼Œä¸€ä¸ªæ˜¯æ£€æµ‹æ°´å¹³è¾¹ç¼˜çš„ ï¼›å¦ä¸€ä¸ªæ˜¯æ£€æµ‹å‚ç›´è¾¹ç¼˜çš„ ã€‚
-//     ä¸Prewittç®—å­ç›¸æ¯”ï¼ŒSobelç®—å­å¯¹äºè±¡ç´ çš„ä½ç½®çš„å½±å“åšäº†åŠ æƒï¼Œå¯ä»¥é™ä½è¾¹ç¼˜æ¨¡ç³Šç¨‹åº¦
-//becare:ä½¿ç”¨æ›´å¤§çš„çª—å£ï¼Œæ„å‘³ç€é‡‡å–æ›´é«˜çš„æ¨¡ç³Š
+//brief:Sobel Ëã×ÓÓĞÁ½¸ö£¬Ò»¸öÊÇ¼ì²âË®Æ½±ßÔµµÄ £»ÁíÒ»¸öÊÇ¼ì²â´¹Ö±±ßÔµµÄ ¡£
+//     ÓëPrewittËã×ÓÏà±È£¬SobelËã×Ó¶ÔÓÚÏóËØµÄÎ»ÖÃµÄÓ°Ïì×öÁË¼ÓÈ¨£¬¿ÉÒÔ½µµÍ±ßÔµÄ£ºı³Ì¶È
+//becare:Ê¹ÓÃ¸ü´óµÄ´°¿Ú£¬ÒâÎ¶×Å²ÉÈ¡¸ü¸ßµÄÄ£ºı
 void SobelOperator::operator()() {
-    //è½¬ä¸ºç°åº¦å¹¶é™å™ª
+    //×ªÎª»Ò¶È²¢½µÔë
 	cv::Mat data = cv::imread(getPath(), cv::IMREAD_GRAYSCALE);
 	if(data.empty()) {
 		dealException(kFileError);
@@ -27,20 +27,19 @@ void SobelOperator::operator()() {
 
 #ifdef USE_OPENCVLIB
 
-	//æ­¤å¤–å†…éƒ¨è¿˜æä¾›ä¸€ç§Scharrçš„å®ç°ï¼Œå…¶æä¾›æ›´é«˜ç²¾åº¦çš„ä¸€é˜¶å¾®åˆ†è¿‘ä¼¼ï¼Œæ˜¯å¯¹Sobelçš„ä¼˜åŒ–
+	//´ËÍâÄÚ²¿»¹Ìá¹©Ò»ÖÖScharrµÄÊµÏÖ£¬ÆäÌá¹©¸ü¸ß¾«¶ÈµÄÒ»½×Î¢·Ö½üËÆ£¬ÊÇ¶ÔSobelµÄÓÅ»¯
 	cv::Sobel(data, img_x, CV_16S, 1, 0, win_);
 	//or use cv::filter2D
 	
 	cv::Sobel(data, img_y, CV_16S, 0, 1, win_);
 
 #else
-	//æœ€åˆé‡‡ç”¨å›ºå®šçš„ç©ºé—´æ»¤æ³¢æ ¸çš„å®ç°æ–¹å¼
+	//×î³õ²ÉÓÃ¹Ì¶¨µÄ¿Õ¼äÂË²¨ºËµÄÊµÏÖ·½Ê½
 	//int filter_x[] = {
 	//	-1, 0, 1,
 	//	-2, 0, 2,
 	//	-1, 0, 1 };
 	//detail::filter2D<CV_8U, CV_16S, int>(data, img_x, filter_x, 3, 3, false, false);
-
 	//int filter_y[] = {
 	//	-1, -2, -1,
 	//	0, 1, 0,
@@ -51,11 +50,11 @@ void SobelOperator::operator()() {
 	detail::Sobel(data, img_y, CV_16S, 0, 1, win_);
 #endif
 
-	//é‡æ–°æ ‡å®š
+	//ÖØĞÂ±ê¶¨
 	cv::convertScaleAbs(img_x, img_x, 1, 128);
 	cv::convertScaleAbs(img_y, img_y, 1, 128);
 
-	//è¿‘ä¼¼æ¢¯åº¦
+	//½üËÆÌİ¶È
 	cv::Mat gradient;
 	cv::addWeighted(img_x, 0.5, img_y, 0.5, 0, gradient);
 
