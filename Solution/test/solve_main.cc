@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
 
 #ifdef NO_015
 	SobelOperator so015("imori.jpg",
-					5,
+					3,
             		true);
 	Solve(so015);
 #endif
@@ -268,6 +268,19 @@ int main(int argc, char** argv) {
 	Solve(nf0XX);
 #endif
 
+
+
+
+#if (defined NO_041) || (defined NO_042) || (defined NO_043)
+	coutInfo("三道题合并，如需查看过程，在base.cc编译时加入 -DSHOW_PROCESS,然后重新编译本测试文件");
+	Canny cy041("house.jpg",
+					100,
+					300,
+					3,
+					true,
+					true); 
+	Solve(cy041);
+#endif
 
 
 

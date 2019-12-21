@@ -3,6 +3,9 @@
 
 #include"Solution/solution.h"
 
+
+#define NO_041
+
 #ifdef NO_001
 #include"Solution/001-010/channel_swap.h"
 #endif
@@ -111,10 +114,6 @@
 #include"Solution/021-030/bicubic_interpolation.h"
 #endif
 
-#define NO_035
-//#define NO_030
-//#define NO_029
-//#define NO_028
 
 #if (defined NO_028) || (defined NO_029) || (defined NO_030) || (defined NO_031)
 #include"Solution/021-030/affine_transformation.h"
@@ -137,6 +136,11 @@
 #include"Solution/031-040/notch_filter.h"
 #endif
 
+
+
+#if (defined NO_041) || (defined NO_042) || (defined NO_043)
+#include"Solution/041-050/canny.h"
+#endif
 
 
 
