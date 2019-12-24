@@ -20,6 +20,7 @@ void Canny::operator()() {
 	detail::Canny(data, img, threshold_1_, threshold_2_, aperture_size_, use_L2gradient_);
 #endif
 
+
 	if (needShowOriginal())
 		show(&data, &img);
 	else
