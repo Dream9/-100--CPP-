@@ -114,7 +114,7 @@ public:
 };
 
 //brief:用于初始化状态
-class Init {
+class Init : digital::noncopyable {
 public:
 	Init() {
 		dict.insert({ detail::ILPF,new Ilpf});
@@ -130,11 +130,16 @@ public:
 		dict.insert({ detail::BR,new Bbrf});
 
 		dict.insert({ detail::NOTCH, new Notch });
+	}
 
+	~Init() {
+		std::for_each(dict.begin(), dict.end(), [](std::pair<int, FDF_factory*>item) {
+			delete item.second;
+		});
 	}
 };
 
-static Init _init_object;
+Init _init_object;
 
 //brief:从两个点中构建Rect
 inline cv::Rect __getRectFromPoint(cv::Point p1, cv::Point p2) {

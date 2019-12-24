@@ -30,6 +30,16 @@ enum {
 	BORDER_DEFAULT = 4,
 };
 
+//brief:禁止对象拷贝，保证对象对象语义
+class noncopyable {
+public:
+	void operator=(const noncopyable&) = delete;
+	noncopyable(const noncopyable&) = delete;
+protected:
+	noncopyable() = default;
+	~noncopyable() = default;
+};
+
 //brief:处理出错信息
 #define dealException(x) digital::__dealException(x,__FILE__, __LINE__, __FUNCTION__)
 void __dealException(ErrorCode code, const char* file, int line, const char* func);

@@ -117,10 +117,8 @@ void fillHistogram(const cv::Mat& hist,
 		x_pos = static_cast<int>(x_pos_d);
 
 #ifndef NDEBUG
-
 		//for test
 		digital::__printInfo("%d,%d--%d,%d\r\n", x_pos, y, x_pos, y - static_cast<int>(*cursor *scale));
-
 #endif
 
 		//brief；通过line表示出直方图分布
@@ -132,7 +130,7 @@ void fillHistogram(const cv::Mat& hist,
 
 //brief:灰度反转
 void colorInversion(cv::Mat& src, int max_value) {
-	src = max_value - src;
+	src = cv::Scalar::all(max_value) - src;
 }
 
 //brief；
@@ -214,6 +212,27 @@ void equalizeHist(cv::Mat& src, cv::Mat& dst) {
 	};
 	detail::grayscaleTransform(src, equalize_func);
 }
+
+//brief:查找表
+void LUT(cv::Mat& src, cv::Mat& dst, cv::Mat& lut) {
+	assert(!src.empty());
+	assert(src.depth() == CV_8U);
+	assert(src.data != dst.data);
+	assert(lut.isContinuous());
+
+	dst.create(src.size(), src.type());
+	auto iter = dst.data;
+	size_t channels = dst.channels();
+	auto buncket = lut.data;
+
+	auto set_new_value = [&](uint8_t* cursor) {
+		for (int c = 0; c < channels; ++c)
+			*iter++ = buncket[*cursor];
+	};
+
+	detail::grayscaleTransform(src, set_new_value);
+}
+
 
 
 

@@ -124,6 +124,65 @@ void sepConvolution2D(const cv::Mat& src,
 	cv::sepFilter2D(src, dst, ddepth, flip_kx, flip_ky, p, 0.0, bordertype);
 }
 
+//brief:更标准的形式
+//becare:关于类型分发，由调用者传入的op负责分发
+void filter2DNonLinear(cv::Mat& src, cv::Mat& dst, cv::Mat& kernel, int ddepth, NonlinearOperationType op,
+	cv::Point anchor, int borderType) {
+	cv::Size ksize = kernel.size();
+	anchor.x = anchor.x == -1 ? (ksize.width >> 1) : anchor.x;
+	anchor.y = anchor.y == -1 ? (ksize.height >> 1) : anchor.y;
+
+	//becare:这里要求锚点始终位于内部
+	assert(anchor.x < ksize.width && anchor.x >= 0);
+	assert(anchor.y < ksize.height && anchor.y >= 0);
+	int offset_t = anchor.y;
+	int offset_b = ksize.height - anchor.y - 1;
+	int offset_l = anchor.x;
+	int offset_r = ksize.width - anchor.x - 1;
+
+	cv::Size ssize = src.size();
+	dst = cv::Mat(ssize, CV_MAKETYPE(ddepth, src.channels()));
+
+	//扩展边界
+	cv::Mat data;
+	cv::copyMakeBorder(src, data, offset_t, offset_b, offset_l, offset_r, borderType);
+
+	//滤波运算
+	auto cur = dst.data;
+	std::vector<uint8_t*> arr_dst(ksize.height, nullptr);
+	cv::Size size = data.size();
+	size_t kStep = data.step;
+	auto src_elemSize = src.elemSize();
+	auto dst_elemSize = dst.elemSize();
+
+	for (int i = offset_t; i < size.height - offset_b; ++i) {
+		auto cursor = data.ptr(i - offset_t, 0);//cursor指向窗口左上处的位置
+		for (int j = offset_l; j < size.width - offset_r; ++j) {
+
+			assert(cursor == data.ptr(i - offset_t, j - offset_l));
+			assert(cur == dst.ptr(i - offset_t, j - offset_l));
+
+			//单个窗口计算
+			auto iter = cursor;
+			int n = 0;
+			for (int x = 0; x < ksize.height; ++x) {
+				assert(iter == data.ptr(i - offset_t + x, j - offset_l));
+
+				arr_dst[x] = iter;
+				iter += kStep;
+				
+			}
+
+			//调用用户例程
+			op(&arr_dst[0], cur);
+
+			cur += dst_elemSize;
+			cursor += src_elemSize;
+		}
+	}
+
+}
+
 //brief:Sobel算子，采用分离式卷积核完成
 void Sobel(cv::Mat& src, cv::Mat& dst, int ddepth, int dx, int dy, int win) {
 	assert((win & 0x1) == 0x1);
@@ -304,7 +363,6 @@ cv::Mat __hysteresisThreshold(cv::Mat& src, double lower, double upper) {
 }
 
 #define CHECK_OUT_RANGE(row,column,height, width)(column < 0 || row < 0 || column >= width || row >= height)
-#define GET_INDEX(row)
 
 //brief:
 void __dfs(cv::Mat& src, cv::Mat& dst, double lower, int row, int column) {
@@ -324,7 +382,8 @@ void __dfs(cv::Mat& src, cv::Mat& dst, double lower, int row, int column) {
 			}
 		}
 	}
-
 }
+
+#undef CHECK_OUT_RANGE
 
 }//!namespace 

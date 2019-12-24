@@ -1,5 +1,5 @@
 //brief:提供有关图像滤波功能的封装，主要包含涉及到窗口操作的图像处理功能
-//      仅为内部使用，用户不应直接使用本文件，包含线性/非线性滤波运算等基础功能
+//      包含线性/非线性滤波运算等基础功能
 
 #ifndef _SOLUTION_BASE_H_
 #define _SOLUTION_BASE_H_
@@ -11,6 +11,8 @@
 
 //brief:对外隐藏
 namespace detail {
+
+typedef std::function<void(uint8_t**, uint8_t*)> NonlinearOperationType;
 
 //brief:根据窗口确定sigma大小
 inline double getSigma(int size) {
@@ -257,6 +259,7 @@ void filter2D(cv::Mat& data,
 	data(cv::Rect(offset_c, offset_r, size.width, size.height)).copyTo(data);
 }
 
+//FIXME：提供更标准的接口形式
 //brief:提供基于非线性操作的滤波接口，为每个窗口调用用户指定例程
 //parameter:src:原始数据
 //          dst:目标存储
@@ -265,30 +268,31 @@ void filter2D(cv::Mat& data,
 //          Ky*:匿名对象，仅用于表明src数据类型
 //becare:Op应该重载了operator()(Ky[] src,Ky* dst),其中src为窗口的每行起始地址（行数用win_r决定），dst为结果地址
 template<typename Op, typename Ky>
-void filter2DNonLinear(cv::Mat& data, 
+void filter2DNonLinear(cv::Mat& src, 
 	cv::Mat& img, 
 	Op ops,
 	int win_c, 
 	int win_r, 
 	Ky* =nullptr)
 {
-	img.create(data.size(), data.type());
+	img = cv::Mat(src.size(), src.type());
 
-	assert(data.type() == img.type());
-	assert(data.size() == img.size());
+	assert(src.type() == img.type());
+	assert(src.size() == img.size());
 
-	cv::Size old_size = data.size();
+	cv::Size old_size = src.size();
 	const int offset_c = win_c >> 1;
 	const int offset_r = win_r >> 1;
-	const int kElemSize = static_cast<int>(data.elemSize());
-	const int kStep = static_cast<int>(data.step[0]);
+	const int kElemSize = static_cast<int>(src.elemSize());
+	const int kStep = static_cast<int>(src.step[0]);
 
 	//FIXME:或者使用 vector ??
 	//std::shared_ptr<Ky*> arr_dst(new Ky*[win_r] ,deleter<Ky>);//c++17之前的shared_ptr对于二维动态数组的扩展太差！差评
 	std::vector<Ky*> arr_dst(win_r, nullptr);
 
 	//扩展边界
-	cv::copyMakeBorder(data, data,offset_r, offset_r, offset_c, offset_c, cv::BORDER_DEFAULT);
+	cv::Mat data;//becare:因为不是push_back,所以这里大部分情况下是重新分配内存
+	cv::copyMakeBorder(src, data,offset_r, offset_r, offset_c, offset_c, cv::BORDER_DEFAULT);
 
 	//滤波运算
 	auto cur = img.data;
@@ -316,10 +320,21 @@ void filter2DNonLinear(cv::Mat& data,
 	}
 
 	//复原大小
-	size = img.size();
-	data(cv::Rect(offset_c, offset_r, size.width, size.height)).copyTo(data);
+	//size = img.size();
+	//data(cv::Rect(offset_c, offset_r, size.width, size.height)).copyTo(data);
 }
 
+//brief:更标准的接口形式
+//     参数参见cv::filter2D
+//becare:op为用户提提供的指定操作，通常完成非线性的变换
+void filter2DNonLinear(cv::Mat& src,
+	cv::Mat& dst,
+	cv::Mat& kernel,
+	int ddepth,
+	NonlinearOperationType op,
+	cv::Point anchor = cv::Point(-1, -1),
+	//double delta = 0,
+	int borderType = cv::BORDER_DEFAULT);
 
 //brief:soble算子的封装
 //parameter: src:目标图像
