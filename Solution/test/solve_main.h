@@ -4,7 +4,8 @@
 #include"Solution/solution.h"
 
 
-#define NO_041
+#define NO_049
+#define NO_050
 
 #ifdef NO_001
 #include"Solution/001-010/channel_swap.h"
@@ -136,12 +137,15 @@
 #include"Solution/031-040/notch_filter.h"
 #endif
 
-
-
 #if (defined NO_041) || (defined NO_042) || (defined NO_043)
 #include"Solution/041-050/canny.h"
 #endif
 
+
+#if (defined NO_047) || (defined NO_048) || (defined NO_049) || (defined NO_050) || \
+    (defined NO_051) || (defined NO_052) || (defined NO_053)
+#include"Solution/041-050/morphology.h"
+#endif
 
 
 
