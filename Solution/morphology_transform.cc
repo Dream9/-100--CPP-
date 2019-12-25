@@ -219,13 +219,28 @@ void MorphClose::operator()(cv::Mat& src, cv::Mat& dst, cv::Mat& kernel, cv::Poi
 	detail::erode(tmp,dst,kernel,anchor,iterations);
 }
 
+//brief:形态学梯度，即用膨胀的结果-腐蚀的结果
 void MorphGradient::operator()(cv::Mat& src, cv::Mat& dst, cv::Mat& kernel, cv::Point anchor , int iterations) {
-	//TODO
+	cv::Mat tmp;
+	detail::dilate(src, tmp, kernel, anchor, iterations);
+	detail::erode(src, dst, kernel, anchor, iterations);
+	dst = tmp - dst;
 }
+
+//brief:白顶帽变换，主要是用一个很大的结构元件进行开操作，去除大部分的白色前景物体，保留背景阴影模式，然后剪掉该
+//      阴影模式，从而使得光照均匀，黑底帽变换适合于黑色前景物体，白色背景光照，正好相反
 void MorphTopHat::operator()(cv::Mat& src, cv::Mat& dst, cv::Mat& kernel, cv::Point anchor , int iterations) {
+	cv::Mat tmp;
+	MorphDict[detail::MORPH_OPEN]->operator()(src, tmp, kernel, anchor, iterations);
+	dst = src - tmp;
 	//TODO
 }
+
+//brief:黑底帽变换，详情参见白顶帽
 void MorphBlackHat::operator()(cv::Mat& src, cv::Mat& dst, cv::Mat& kernel, cv::Point anchor , int iterations) {
-	//TODO
+	cv::Mat tmp;
+	MorphDict[detail::MORPH_CLOSE]->operator()(src, tmp, kernel, anchor, iterations);
+	dst = tmp - src;
+
 }
 }//!namespace

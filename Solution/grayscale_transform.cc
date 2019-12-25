@@ -233,6 +233,80 @@ void LUT(cv::Mat& src, cv::Mat& dst, cv::Mat& lut) {
 	detail::grayscaleTransform(src, set_new_value);
 }
 
+//brief:获得OSTU类间最大阈值
+//      参考了opencv库的实现
+//becare:只针对类型为uint8_t的数据做了特化
+double otsuThreshold(cv::Mat& src) {
+	int step = static_cast<int>(src.step);
+	cv::Size size = src.size();
+
+	//brief:针对连续内存的优化
+	if (src.isContinuous()) {
+		size.width *= size.height;
+		size.height = 1;
+		step = size.width * sizeof(uchar);
+	}
+
+	const int N = 1 << (sizeof(uchar) * 8);
+	//std::vector<int> hist(N);
+	int hist[N] = { 0 };
+	int i = 0;
+	int j = 0;
+
+	double global_m = 0;
+	for (; i < size.height; ++i) {
+		auto iter = src.ptr() + step * i;
+		j = 0;
+
+		//brief:减少不必要的内存引用
+		int end = size.width;
+		//brief:进行循环展开
+		for (; j + 3 < end; j += 4) {
+			++hist[iter[j]];
+			++hist[iter[j+1]];
+			++hist[iter[j+2]];
+			++hist[iter[j+3]];
+
+			global_m += iter[j];
+			global_m += iter[j+1];
+			global_m += iter[j+2];
+			global_m += iter[j+3];
+		}
+	}
+
+	double scale = 1.0 / size.width / size.height;
+	global_m *= scale;//平均灰度值
+	double prev_m1 = 0;
+	double prev_p1 = 0;
+	double max_sigma = 0;
+	double out = 0;
+
+	for (i = 0; i < N; ++i) {
+		double pi = hist[i] * scale;
+		double cur_p1 = prev_p1 + pi;
+		double cur_m1 = (prev_m1*prev_p1 + i * pi) / cur_p1;
+		
+		//brief:防止除接近0的数
+		if (fabs(cur_p1) < 1e-8 || fabs(1 - cur_p1) < 1e-8)
+			continue;
+
+		double cur_p2 = 1 - cur_p1;
+		double cur_m2 = (global_m - cur_p1 * cur_m1) / cur_p2;
+
+		//becare:这里采用了 P1*P2*(m1-m2)^2的计算，经过化简后与另一个公式相同
+		double cur_sigma = cur_p1 * cur_p2*pow(cur_m1 - cur_m2, 2);
+
+		if (cur_sigma > max_sigma) {
+			max_sigma = cur_sigma;
+			out = i;
+		}
+
+		prev_m1 = cur_m1;
+		prev_p1 = cur_p1;
+	}
+
+	return out;
+}
 
 
 

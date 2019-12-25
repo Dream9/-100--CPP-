@@ -17,6 +17,9 @@ void LUT(cv::Mat& src,
 	cv::Mat& dst, 
 	cv::Mat& lut);
 
+//brief:
+double otsuThreshold(cv::Mat& src);
+
 //brief:计算单个Mat的概率密度函数
 //parameter:src:带解析源
 //          dst:存储目标，结果默认为CV_32F
