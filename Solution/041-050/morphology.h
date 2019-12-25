@@ -16,6 +16,11 @@ public:
 		OPEN = 0x1<<2,
 		CLOSE = 0x1<<3,
 
+		GRADIENT = 0x1<<4,
+
+		TOPHAT = 0x1<<5,
+		BLACKHAT = 0x1<<6,
+
 	};
 	Morphology(const string& path, int iterations = 1, int op = DILATE, bool flag = false, const string& name = "MorphologyDilate")
 		:Solution(name, path, flag), iter_(iterations), op_(op)
