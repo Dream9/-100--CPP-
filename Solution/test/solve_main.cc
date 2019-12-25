@@ -296,11 +296,20 @@ int main(int argc, char** argv) {
 #ifdef NO_050
 	morph_ops = morph_ops | Morphology::CLOSE;
 #endif
+#ifdef NO_051
+	morph_ops = morph_ops | Morphology::GRADIENT;
+#endif
+#ifdef NO_052
+	morph_ops = morph_ops | Morphology::TOPHAT;
+#endif
+#ifdef NO_053
+	morph_ops = morph_ops | Morphology::BLACKHAT;
+#endif
 
 #if (defined NO_047) || (defined NO_048) || (defined NO_049) || (defined NO_050) || \
     (defined NO_051) || (defined NO_052) || (defined NO_053)
 
-	Morphology md047("imori.jpg",
+	Morphology md047("imori_uneven_shadow.jpg",
 					2,
 					morph_ops,
 					true);

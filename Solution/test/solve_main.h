@@ -4,8 +4,11 @@
 #include"Solution/solution.h"
 
 
-#define NO_049
+#define NO_032
+#define NO_051
 #define NO_050
+#define NO_049
+#define NO_048
 
 #ifdef NO_001
 #include"Solution/001-010/channel_swap.h"
@@ -136,6 +139,7 @@
 #include"Solution/031-040/frequency_domain_filter_band.h"
 #include"Solution/031-040/notch_filter.h"
 #endif
+
 
 #if (defined NO_041) || (defined NO_042) || (defined NO_043)
 #include"Solution/041-050/canny.h"
