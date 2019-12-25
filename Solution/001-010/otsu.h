@@ -18,7 +18,7 @@ public:
 	void operator()() override;
 
 private:
-	double getOtsuThreshold_(const void* img);
+	double getOtsuThreshold_(void* img);
 };
 
 }//£¡namespace digital
