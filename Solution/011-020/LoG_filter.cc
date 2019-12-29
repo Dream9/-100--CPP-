@@ -6,6 +6,8 @@
 
 namespace digital {
 
+#define OUT_RANGE(x,y,s) (x<0 || y<0 || x>=s.height || y>=s.width)
+
 //brief:根据窗口大小先对图像滤波
 void LoG::operator()() {
 	cv::Mat data = cv::imread(getPath());
@@ -20,7 +22,7 @@ void LoG::operator()() {
 
 	cv::Mat img;
 	
-#ifdef USE_OPENCVLIB
+#ifndef USE_OPENCVLIB
 
 	cv::flip(filter, filter, -1);
 	cv::filter2D(data, img, CV_16S, filter);
@@ -31,7 +33,41 @@ void LoG::operator()() {
 
 #endif
 
+	//下面是基于LoG的Marr-Hildreth边缘检测，进行交叉零点检测
+	cv::Mat new_img=cv::Mat::zeros(img.size(), CV_8U);
+	cv::Size size = img.size();
+	for (int x = 0; x < size.height; ++x) {
+		for (int y = 0; y < size.width; ++y) {
+			int x1 = x, y1 = y - 1, x2 = x, y2 = y + 1;
+			if (!OUT_RANGE(x1, y1, size) && !OUT_RANGE(x2, y2, size)) {
+				if (img.at<short>(x1, y1)*img.at<short>(x2, y2) < 0)
+					new_img.at<uchar>(x, y) = 255;
+			}
+
+			x1 = x-1, y1 = y , x2 = x+1, y2 = y ;
+			if (!OUT_RANGE(x1, y1, size) && !OUT_RANGE(x2, y2, size)) {
+				if (img.at<short>(x1, y1)*img.at<short>(x2, y2) < 0)
+					new_img.at<uchar>(x, y) = 255;
+			}
+			
+			x1 = x-1, y1 = y - 1, x2 = x+1, y2 = y + 1;
+			if (!OUT_RANGE(x1, y1, size) && !OUT_RANGE(x2, y2, size)) {
+				if (img.at<short>(x1, y1)*img.at<short>(x2, y2) < 0)
+					new_img.at<uchar>(x, y) = 255;
+			}
+			
+			x1 = x+1, y1 = y - 1, x2 = x-1, y2 = y + 1;
+			if (!OUT_RANGE(x1, y1, size) && !OUT_RANGE(x2, y2, size)) {
+				if (img.at<short>(x1, y1)*img.at<short>(x2, y2) < 0)
+					new_img.at<uchar>(x, y) = 255;
+			}
+		}
+	}
+
+
 	cv::convertScaleAbs(img, img);
+
+	show(&img, &new_img,"左侧为正常LoG,右侧为使用Marr-Hildreth进一步处理的结果");
 
 	if (needShowOriginal())
 		show(&data, &img);

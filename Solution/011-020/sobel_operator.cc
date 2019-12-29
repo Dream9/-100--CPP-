@@ -50,13 +50,12 @@ void SobelOperator::operator()() {
 	detail::Sobel(data, img_y, CV_16S, 0, 1, win_);
 #endif
 
-	//重新标定
-	cv::convertScaleAbs(img_x, img_x, 1, 128);
-	cv::convertScaleAbs(img_y, img_y, 1, 128);
-
 	//近似梯度
 	cv::Mat gradient;
-	cv::addWeighted(img_x, 0.5, img_y, 0.5, 0, gradient);
+	cv::addWeighted(cv::abs(img_x), 1, cv::abs(img_y), 1, 0, gradient, CV_8U);
+
+	img_x.convertTo(img_x, CV_8U);
+	img_y.convertTo(img_y, CV_8U);
 
 	assert_imshow_type(gradient.depth());
 
