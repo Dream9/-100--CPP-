@@ -308,6 +308,30 @@ double otsuThreshold(cv::Mat& src) {
 	return out;
 }
 
+////brief:
+////becare:根据Ty类型决定ddepth的类型
+//template<typename Ty>
+//void addAbs(cv::InputArray first, cv::InputArray second, cv::OutputArray dst) {
+//	cv::Mat src1 = first.getMat();
+//	cv::Mat src2 = second.getMat();
+//
+//	assert(src1.type() == src2.type());
+//
+//	int ddepth = ddepth == -1 ? src1.depth() : ddepth;
+//	
+//	int elemsize = src1.elemSize();
+//	auto iter = src2.ptr<Ty>(0,0);
+//	auto cur2 = src2.ptr<Ty>(0,0);
+//
+////	dst.create(src1.size(),CV_MAKETYPE(CV_8U, ddepth))
+////	auto abs_add = [&](const uint8_t* cursor) {
+////		Ty* cur = static_cast<Ty*>(static_cast<void*>(cursor));
+////		*iter++ = std::fabs(*cur) + ;
+////	}
+////
+////	detail::grayscaleTransform(src1,)
+//
+//}
 
 
 

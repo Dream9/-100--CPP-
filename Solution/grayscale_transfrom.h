@@ -68,6 +68,9 @@ void convertScaleAbs(cv::Mat& src, cv::Mat& dst, double alpha, double beta);
 //becare:opencv中要求src必须是CV_8U1C的数据，这里做了一点小扩展，即多通道数据也可以参与运算
 void equalizeHist(cv::Mat& src, cv::Mat& dst);
 
+//brief:
+//void addAbs(cv::InputArray first, cv::InputArray second, cv::OutputArray dst);
+
 }//!namespace detail
 
 

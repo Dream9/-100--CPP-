@@ -180,6 +180,9 @@ void __MatrixTest(void* first, void* second) {
 	cv::Mat& img = *static_cast<cv::Mat*>(first);
 	cv::Mat& out = *static_cast<cv::Mat*>(second);
 	
+	assert(!img.empty());
+	assert(img.size() == out.size());
+
 	int rows = img.rows;
 	int cols = img.cols;
 	

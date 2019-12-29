@@ -218,25 +218,29 @@ void Canny(cv::Mat& src, cv::Mat& dst, double threshold_1, double threshold_2,
 	assert(!src.empty());
 
 	//FIXME:滤波参数？
-	cv::Mat data;
-	cv::GaussianBlur(src, data, cv::Size(3, 3), -1);
+	//becare:平滑图像不是本函数的职责！！！
+	//cv::Mat data;
+	//cv::GaussianBlur(src, data, cv::Size(3, 3), -1);
 
 	cv::Mat dx;
 	cv::Mat dy;
 
 #ifdef USE_OPENCVLIB
-	cv::Sobel(data, dx, CV_64F, 1, 0, apertureSize);
-	cv::Sobel(data, dy, CV_64F, 0, 1, apertureSize);
+	cv::Sobel(src, dx, CV_64F, 1, 0, apertureSize);
+	cv::Sobel(src, dy, CV_64F, 0, 1, apertureSize);
 #else
-	detail::Sobel(data, dx, CV_64F, 1, 0, apertureSize);
-	detail::Sobel(data, dy, CV_64F, 0, 1, apertureSize);
+	detail::Sobel(src, dx, CV_64F, 1, 0, apertureSize);
+	detail::Sobel(src, dy, CV_64F, 0, 1, apertureSize);
 #endif
 
 	cv::Mat gradient;
 	if (useL2gradient) 
 		cv::magnitude(dx, dy, gradient);
-	else 
-		cv::addWeighted(dx, 0.5, dy, 0.5, 0, gradient, CV_64F);
+	else {
+		//FIXME： error!!忘记取绝对值了。。。。
+		//cv::addWeighted(dx, 0.5, dy, 0.5, 0, gradient, CV_64F);
+		cv::addWeighted(cv::abs(dx), 1, cv::abs(dy), 1, 0, gradient, CV_64F);
+	}
 
 #ifdef SHOW_PROCESS
 	cv::Mat tmp;
