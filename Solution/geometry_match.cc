@@ -5,16 +5,16 @@
 
 namespace detail {
 
-//brief:»ô·ò±ê×¼Ö±Ïß¼ì²â
-//beacre:ÕâÀï´¢´æ½á¹ûÖ»·µ»ØCV_64C2ÀàĞÍµÄĞĞÏòÁ¿£¬¿ÉÒÔÊ¹ÓÃvector<Vec2f>¼ÇÂ¼
-//       ÊäÈëÊı¾İ±ØĞëÊÇCV_8UC1µÄ¶şÖµÍ¼Ïñ£¬°ÑÆäÖĞµÄÖµÎªUINT8_MAX×÷ÎªÇ°¾°Êı¾İ
+//brief:éœå¤«æ ‡å‡†ç›´çº¿æ£€æµ‹
+//beacre:è¿™é‡Œå‚¨å­˜ç»“æœåªè¿”å›CV_64C2ç±»å‹çš„è¡Œå‘é‡ï¼Œå¯ä»¥ä½¿ç”¨vector<Vec2f>è®°å½•
+//       è¾“å…¥æ•°æ®å¿…é¡»æ˜¯CV_8UC1çš„äºŒå€¼å›¾åƒï¼ŒæŠŠå…¶ä¸­çš„å€¼ä¸ºUINT8_MAXä½œä¸ºå‰æ™¯æ•°æ®
 void HoughLines(cv::InputArray src, cv::OutputArray lines, double rho, double theta, int threshold) {
 	cv::Mat in = src.getMat();
 	assert(in.type() == CV_8UC1);
 	assert(in.isContinuous());
 
-	//³õÊ¼»¯ÀÛ¼ÓÆ÷
-	//becare:ÕâÀïºÍopencv´æÔÚÒ»¶¨µÄ²îÒì£¬ÒòÎªÇĞ¸î¾àÀëµÄ×ø±êÆğÊ¼µãÎÊÌâ
+	//åˆå§‹åŒ–ç´¯åŠ å™¨
+	//becare:è¿™é‡Œå’Œopencvå­˜åœ¨ä¸€å®šçš„å·®å¼‚ï¼Œå› ä¸ºåˆ‡å‰²è·ç¦»çš„åæ ‡èµ·å§‹ç‚¹é—®é¢˜
 	cv::Size size = in.size();
 	double max_distance = std::sqrt(size.height*size.height + size.width*size.width);
 	int angle_number = static_cast<int>(std::ceil(CV_PI / theta));
@@ -23,7 +23,7 @@ void HoughLines(cv::InputArray src, cv::OutputArray lines, double rho, double th
 	double offset = rho_number * rho * 0.5 - half_rho;
 	cv::Mat accumulator = cv::Mat::zeros(cv::Size(rho_number, angle_number), CV_32SC1);
 
-	//½øĞĞ±ê×¼»ô·ò±ä»»
+	//è¿›è¡Œæ ‡å‡†éœå¤«å˜æ¢
 	auto iter = in.data;
 	for (int y = 0; y < size.height; ++y) {
 		for (int x = 0; x < size.width; ++x) {
@@ -41,7 +41,7 @@ void HoughLines(cv::InputArray src, cv::OutputArray lines, double rho, double th
 		}
 	}
 
-#ifndef SHOW_PROCESS
+#ifdef SHOW_PROCESS
 
 	string name = "HoughSpace";
 	cv::namedWindow(name, CV_WINDOW_NORMAL);
@@ -54,7 +54,7 @@ void HoughLines(cv::InputArray src, cv::OutputArray lines, double rho, double th
 #endif
 
 
-	//Í³¼ÆÌ½²âµÄÖ±Ïß
+	//ç»Ÿè®¡æ¢æµ‹çš„ç›´çº¿
 	std::vector<cv::Vec2d> tmp;
 	auto cur = accumulator.ptr<int>(0, 0);
 	size = accumulator.size();
@@ -65,21 +65,21 @@ void HoughLines(cv::InputArray src, cv::OutputArray lines, double rho, double th
 			//if(fabs(distance +0.5*rho -232)<1e-5 && fabs(alpha-1.51844)<1e-5)
 
 
-			//if (*cur++ <= threshold) {//FIXME:==Ê±²»Ó¦±»¹ıÂË
+			//if (*cur++ <= threshold) {//FIXME:==æ—¶ä¸åº”è¢«è¿‡æ»¤
 			if (*cur++ < threshold) {
 				distance += rho;
 				continue;
 			}
 
-			//ÔÚ»ô·òÖ±Ïß¿Õ¼äÖĞ³¬¹ıãĞÖµ
-			//tmp.emplace_back(alpha, distance);//ÎªÁËÓëopecv¼æÈİ£¬·µ»ØÊÇÏÈ¾àÀëºó½Ç¶È
+			//åœ¨éœå¤«ç›´çº¿ç©ºé—´ä¸­è¶…è¿‡é˜ˆå€¼
+			//tmp.emplace_back(alpha, distance);//ä¸ºäº†ä¸opecvå…¼å®¹ï¼Œè¿”å›æ˜¯å…ˆè·ç¦»åè§’åº¦
 			tmp.emplace_back(distance, alpha);
 			distance += rho;
 		}
 		alpha += theta;
 	}
 
-	//½«½á¹ûÌî³äµ½ÓÃ»§¿Õ¼ä
+	//å°†ç»“æœå¡«å……åˆ°ç”¨æˆ·ç©ºé—´
 	int len = static_cast<int>(tmp.size());
 	lines.create(cv::Size(1, len), CV_64FC2);
 	cv::Mat out = lines.getMat();
@@ -90,7 +90,7 @@ void HoughLines(cv::InputArray src, cv::OutputArray lines, double rho, double th
 	}
 }
 
-//brief:¸ÅÂÊ»ô·òÖ±Ïß¼ì²â
+//brief:æ¦‚ç‡éœå¤«ç›´çº¿æ£€æµ‹
 void HoughLinesP(cv::InputArray src, cv::OutputArray lines, double rho, double theta, int threshold,
 	double min_line_length, double max_line_length){
 	//TODO
