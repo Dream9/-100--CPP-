@@ -149,8 +149,8 @@ int main(int argc, char** argv) {
 #endif
 	
 #ifdef NO_019
-	LoG lg019("imori_noise.jpg",
-					5,
+	LoG lg019("house2.jpg",
+					37,
             		true);
 	Solve(lg019);
 #endif
@@ -268,6 +268,7 @@ int main(int argc, char** argv) {
 	Solve(nf0XX);
 #endif
 
+	//以下测试共用一个用例
 #if (defined NO_041) || (defined NO_042) || (defined NO_043)
 	coutInfo("三道题合并，如需查看过程，在base.cc编译时加入 -DSHOW_PROCESS,然后重新编译本测试文件");
 	Canny cy041("house.jpg",
@@ -278,6 +279,18 @@ int main(int argc, char** argv) {
 					true); 
 	Solve(cy041);
 #endif
+
+	//以下测试共用一个用例
+#if (defined NO_044) || (defined NO_045) || (defined NO_046)
+	HoughLines hl044 ("house2.jpg",
+			    	1,
+					3.14159265354 / 180,
+					120,
+					true);
+	Solve(hl044);
+#endif
+
+
 
 	//以下测试共用一个用例
 #if (defined NO_047) || (defined NO_048) || (defined NO_049) || (defined NO_050) || \
