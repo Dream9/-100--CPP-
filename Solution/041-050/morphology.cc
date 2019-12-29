@@ -11,6 +11,16 @@
 
 namespace digital {
 
+//for test, no meaning
+void test(cv::OutputArray laji) {
+	laji.create(cv::Size(1, 20),CV_32SC2);
+	cv::Mat data = laji.getMat();
+	data.at<int>(0, 0) = 15;
+
+	//data = cv::Mat::zeros(cv::Size(10, 10), CV_8U);
+	//return;
+}
+
 #define SHOW_IMG(x,y,str) if(needShowOriginal())\
 						show(&x, &y, str);\
 				  else\
@@ -32,19 +42,6 @@ void Morphology::operator()() {
 	cv::Mat img;
 	cv::Mat kernel;
 	string title;
-/*
-	img = cv::Mat(data.size(), data.type());
-	uint8_t* iter = img.data;
-	auto set_v = [&](int x, int y, uint8_t* cur) {
-		iter[0] =cv::saturate_cast<uint8_t>(std::sqrt(x) * 8 + cur[0]);
-		iter[1] = cv::saturate_cast<uint8_t>(std::sqrt(x) * 8 + cur[1]);
-		iter[2] = cv::saturate_cast<uint8_t>(std::sqrt(x) * 8 + cur[2]);
-		iter += 3;
-	};
-	detail::geometricTriversal(data, set_v);
-	show(&data, &img);
-	cv::imwrite("E:/dark.jpg", img);
-*/
 
 	kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
 
