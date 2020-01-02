@@ -272,6 +272,10 @@ double otsuThreshold(cv::Mat& src) {
 			global_m += iter[j+2];
 			global_m += iter[j+3];
 		}
+		for (; j < end; ++j) {
+			++hist[iter[j]];
+			global_m += iter[j];
+		}
 	}
 
 	double scale = 1.0 / size.width / size.height;

@@ -26,7 +26,19 @@ void HoughLinesP(cv::InputArray src,
 	double rho,
 	double theta,
 	int threshold,
-	double min_line_length = 0,
-	double max_line_length = 0);
+	double min_line_length = -1,
+	double max_line_length = -1);
+
+//brief:
+//parameter: original:原始图像
+//           mask:边界数据，通常是Canny等边缘检测的二值化结果
+//           hough：houghLines结果
+//           dst：输出
+//           val:边界颜色
+void overlapHoughImage(cv::InputArray original,
+	cv::InputArray mask,
+	cv::InputArray hough, 
+	cv::OutputArray dst,
+	cv::Scalar val = cv::Scalar(0,0,255));
 
 }//!namespace detail
