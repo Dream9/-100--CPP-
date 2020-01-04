@@ -1,15 +1,29 @@
 #include"Solution/morphology_transform.h"
 #include"Solution/base.h"
+#include"Solution/geometric_transform.h"
+#include"Solution/grayscale_transfrom.h"
 #include"Solution/type_extension.h"
 
 #include<unordered_map>
+#include<map>
+
+#define OUT_RANGE(x,y,width,height) (x<0 || y<0 || x>=width || y>=height)
 
 namespace {
 
+const int kSTACK_THRESHOLD = 2000;
+
 //brief:获得结构元的反射，操作类似于卷积核的翻转
 inline void getReflex(cv::Mat& m) {
-	return cv::flip(m,m,-1);
+	return cv::flip(m, m, -1);
 }
+
+//brief:dfs填充连通分量
+int __dfs_connect4(cv::Mat& src, cv::Mat& dst, int x, int y, uint8_t value, int depth);
+int __dfs_connect8(cv::Mat& src, cv::Mat& dst, int x, int y, uint8_t value, int depth);
+
+//brief:quick_union算法的基础
+int __find(std::map<int, int>&dict, int val);
 
 //基于工厂的类型反射机制
 class MorphFactory;
@@ -192,6 +206,156 @@ void morphologyEx(cv::Mat& src, cv::Mat& dst, int op, cv::Mat& kernel, cv::Point
 	morph_operator->operator()(src, dst, kernel, anchor, iteration);
 }
 
+//brief:将相同的连通分量标注成唯一值
+//becare:目前只做了CV_8UC1的扩展
+int getConnectComponent(cv::InputArray src, cv::OutputArray dst, int flag, bool use_dfs) {
+	assert(src.type() == CV_8UC1);
+
+	cv::Mat in = src.getMat();
+	cv::Size size = in.size();
+	dst.create(size, src.type());
+	cv::Mat out = dst.getMat();
+	memset(out.data, 0, out.total()*out.elemSize());
+
+	uint8_t* cur = in.data;
+	if (use_dfs) {
+		//becare:dfs在图像中物体过大时存在栈溢出的风险
+		int(*dfs)(cv::Mat&, cv::Mat&, int, int, uint8_t, int);
+		dfs = flag == LineTypes::LINE_4 ? __dfs_connect4 : __dfs_connect8;
+
+		uint8_t counter = 1;
+		for (int y = 0; y < size.height; ++y) {
+			for (int x = 0; x < size.width; ++x) {
+				if (*cur++ == 0)
+					continue;
+				dfs(in, out, x, y, counter++, 1);
+			}
+		}
+		return counter - 1;
+	}
+	else {
+		//采用quick_union算法，比dfs慢一点，但是没有栈溢出的风险 
+		std::map<int, int> dict;
+		int counter = 1;
+		auto iter = out.data;
+
+		//FIXME:把这两段相似的代码移出
+		if (flag == LINE_4) {
+			auto set_value4 = [size, &iter, &counter, &dict](int x, int y, uint8_t* cur) {
+				if (*cur == 0) {
+					++iter;
+					return;
+				}
+
+				//更新连通分量指示
+				int top = 0, left = 0;
+				left = x >= 1 ? iter[-1] : left;
+				top = y >= 1 ? iter[-size.width] : top;
+
+				int prev = std::max(top, left);
+				if (prev == 0) {
+					*iter++ = counter++;
+				}
+				else {
+					//进行union操作
+					prev = __find(dict, prev);
+					*iter++ = prev;
+					if (top != 0 && top != prev)
+						dict[top] = prev;
+					if (left != 0 && left != prev)
+						dict[left] = prev;
+				}
+			};
+			detail::geometricTriversal(in, set_value4);
+		}
+		else if(flag == LINE_8) {
+			auto set_value8 = [size, &iter, &counter, &dict](int x, int y, uint8_t* cur) {
+				if (*cur == 0) {
+					++iter;
+					return;
+				}
+
+				//更新连通分量指示
+				int top = 0, left = 0, tl = 0;
+				left = x >= 1 ? iter[-1] : left;
+				top = y >= 1 ? iter[-size.width] : top;
+				tl = y >= 1 && x >= 1 ? iter[-size.width - 1] : tl;
+
+				int prev = std::max(top, std::max(tl, left));
+				if (prev == 0) {
+					*iter++ = counter++;
+				}
+				else {
+					//进行union操作
+					prev = __find(dict, prev);
+					*iter++ = prev;
+					if (top != 0 && top != prev)
+						dict[top] = prev;
+					if (left != 0 && left != prev)
+						dict[left] = prev;
+					if (tl != 0 && tl != prev)
+						dict[tl] = prev;
+				}
+			};
+
+			detail::geometricTriversal(in, set_value8);
+		}
+		else {
+			dealException(digital::kParameterNotMatch);
+			return -1;
+		}
+
+		//这里必须进行第二遍遍历，将同一个连通分量都指向同一个最终标识，这也是比dfs慢的原因
+		iter = out.data;
+		auto set_same_id = [&dict](uint8_t* cur) {
+			if (*cur == 0)
+				return;
+			*cur= __find(dict, *cur);
+		};
+		detail::grayscaleTransform(out, set_same_id);
+		return counter - 1;
+	}
+}
+
+//brief:
+void setConnectNumber(cv::InputArray src, cv::OutputArray dst, int flag) {
+	assert(src.type() == CV_8UC1);
+
+	cv::Mat in = src.getMat();
+	cv::Size size = in.size();
+
+	dst.create(size, in.type());
+	cv::Mat out = dst.getMat();
+	memset(out.data, 0, out.total()*out.elemSize());
+
+	//全部8个方向
+	int orientation[][2] = { {0,-1},{0,1},{-1,0},{1,0},
+							{-1,-1},{-1,1},{1,-1},{1,1} };
+
+	int end_index = flag == LINE_4 ? 4 : flag == LINE_8 ? 8 : -1;
+	if (end_index == -1) {
+		dealException(digital::kParameterNotMatch);
+		return ;
+	}
+	auto iter = out.data;
+	auto calc_connection = [&iter, end_index, orientation, size](int x, int y, uint8_t* cursor) {
+		if (*cursor == 0) {
+			++iter;
+			return;
+		}
+		uint8_t counter = 0;
+		for (int i = 0; i < end_index; ++i) {
+			int a = x + orientation[i][0];
+			int b = y + orientation[i][1];
+			if (OUT_RANGE(a, b, size.width, size.height))
+				continue;
+			counter += cursor[orientation[i][1]*size.width + orientation[i][0]] != 0;
+		}
+		*iter++ = counter;
+	};
+	detail::geometricTriversal(in, calc_connection);
+}
+
 
 }//!namespace detail
 
@@ -233,7 +397,6 @@ void MorphTopHat::operator()(cv::Mat& src, cv::Mat& dst, cv::Mat& kernel, cv::Po
 	cv::Mat tmp;
 	MorphDict[detail::MORPH_OPEN]->operator()(src, tmp, kernel, anchor, iterations);
 	dst = src - tmp;
-	//TODO
 }
 
 //brief:黑底帽变换，详情参见白顶帽
@@ -243,4 +406,61 @@ void MorphBlackHat::operator()(cv::Mat& src, cv::Mat& dst, cv::Mat& kernel, cv::
 	dst = tmp - src;
 
 }
+
+//brief:dfs搜索
+int __dfs_connect4(cv::Mat& src, cv::Mat& dst, int x, int y, uint8_t value, int depth) {
+	if (depth > kSTACK_THRESHOLD) {
+		coutInfo(" warning, it may stack overflow using dfs");
+		return -1;
+	}
+	if (OUT_RANGE(x, y, src.cols, src.rows) || dst.at<uint8_t>(y, x)>0 || src.at<uint8_t>(y, x) != UINT8_MAX)
+		return 0;
+
+	//dfs下去即可
+	dst.at<uint8_t>(y, x) = value;
+	int orientation[][2] = { {-1, 0},{0, -1},{1, 0},{0, 1} };
+	for (auto cur : orientation)
+		__dfs_connect4(src, dst, x + cur[0], y + cur[1], value,depth+1);
+
+	return 0;
+}
+int __dfs_connect8(cv::Mat& src, cv::Mat& dst, int x, int y, uint8_t value, int depth) {
+	if (depth > kSTACK_THRESHOLD) {
+		coutInfo(" warning, it may stack overflow using dfs");
+		return -1;
+	}
+	if (OUT_RANGE(x, y, src.cols, src.rows) || dst.at<uint8_t>(y,x)>0 || src.at<uint8_t>(y, x) == 0)
+		return 0;
+
+	//dfs下去即可
+	dst.at<uint8_t>(y, x) = value;
+	int orientation[][2] = { {-1, 0},{0, -1},{1, 0},{0, 1},
+								{-1, -1},{1, -1},{-1, 1},{1, 1} };
+	for (auto cur : orientation)
+		__dfs_connect8(src, dst, x + cur[0], y + cur[1], value,depth+1);
+
+	return 0;
+}
+
+//brief:思路参见《算法》
+//becare:递归回来时会将当前指向都调整到head，这是其quick的原因
+int __find(std::map<int, int>&dict, int val) {
+	auto iter = dict.find(val);
+	if (iter == dict.end()) {
+		dict.insert({ val,val });
+		return val;
+	}
+
+	int head = iter->second;
+	if (head == val)
+		return val;
+	//becare：这里这做了路径压缩，但没做加权
+	head = __find(dict, head);
+	iter->second = head;
+
+	return head;
+}
+
 }//!namespace
+
+#undef OUT_RANGE

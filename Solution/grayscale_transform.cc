@@ -218,19 +218,33 @@ void LUT(cv::Mat& src, cv::Mat& dst, cv::Mat& lut) {
 	assert(!src.empty());
 	assert(src.depth() == CV_8U);
 	assert(src.data != dst.data);
+	assert(lut.depth() == CV_8U);
 	assert(lut.isContinuous());
+	assert(lut.channels() == 1 || lut.channels() == src.channels());
 
 	dst.create(src.size(), src.type());
 	auto iter = dst.data;
 	size_t channels = dst.channels();
 	auto buncket = lut.data;
 
-	auto set_new_value = [&](uint8_t* cursor) {
-		for (int c = 0; c < channels; ++c)
-			*iter++ = buncket[*cursor];
-	};
+	if (lut.channels() == 1) {
+		//lut为单通道
+		auto set_new_value = [&](uint8_t* cursor) {
+			for (int c = 0; c < channels; ++c)
+				*iter++ = buncket[*cursor];
+		};
+		detail::grayscaleTransform(src, set_new_value);
+	}
+	else {
+		//lut的通道数和src一致
+		auto set_new_value = [&](uint8_t* cursor) {
+			for (int c = 0; c < channels; ++c)
+				*iter++ = buncket[*cursor++ + c];
+		};
+		detail::grayscaleTransform(src, set_new_value, false);
+	}
 
-	detail::grayscaleTransform(src, set_new_value);
+
 }
 
 //brief:获得OSTU类间最大阈值

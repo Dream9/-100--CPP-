@@ -12,7 +12,7 @@ typedef std::function<void(uint8_t* cursor)> GrayScaleOperationType;
 
 //brief:查找表
 //     如果存在大量独立的重复计算，采用lut可以节省这些额外计算
-//paramter:参见cv::LUT
+//paramter:lut:参见cv::LUT,特别时关于通道数匹配方面
 void LUT(cv::Mat& src, 
 	cv::Mat& dst, 
 	cv::Mat& lut);
