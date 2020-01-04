@@ -4,7 +4,7 @@
 #include"Solution/solution.h"
 
 
-#define NO_044
+#define NO_059
 
 #ifdef NO_001
 #include"Solution/001-010/channel_swap.h"
@@ -148,6 +148,16 @@
     (defined NO_051) || (defined NO_052) || (defined NO_053)
 #include"Solution/041-050/morphology.h"
 #endif
+
+#if (defined NO_058) || (defined NO_059)
+#include"Solution/051-060/connected_component_label.h"
+#endif
+
+#if (defined NO_061) || (defined NO_062)
+#include"Solution/061-070/connect_number.h"
+#endif
+
+
 
 
 

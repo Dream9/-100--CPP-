@@ -282,6 +282,7 @@ int main(int argc, char** argv) {
 
 	//以下测试共用一个用例
 #if (defined NO_044) || (defined NO_045) || (defined NO_046)
+	coutInfo("三道题合并，如需查看过程，在geometric_match.cc编译时加入 -DSHOW_PROCESS,然后重新编译本测试文件");
 	HoughLines hl044 ("house2.jpg",
 			    	1,
 					3.14159265354 / 180,
@@ -329,10 +330,39 @@ int main(int argc, char** argv) {
 	Solve(md047);
 #endif
 
+	//以下共享一个测试
+#if (defined NO_058) || (defined NO_059)
+	int op;
+#ifdef NO_058
+	op = ConnectedComponentLabel::LINE_4;
+#endif
+#ifdef NO_059
+	op = ConnectedComponentLabel::LINE_8;
+#endif
+	ConnectedComponentLabel ccl058("seg.png",
+					op,
+					true);
+	Solve(ccl058);
+#endif
+
+	//以下共享一个测试
+#if (defined NO_061) || (defined NO_062)
+	int op;
+#ifdef NO_061
+	op = ConnectNumber::LINE_4;
+#endif
+#ifdef NO_062
+	op = ConnectNumber::LINE_8;
+#endif
+	ConnectNumber cn061("seg.png",
+					op,
+					true);
+	Solve(cn061);
+#endif
 
 
 
-
+	return 0;
 }
 
 #undef CHECK_ZERO
