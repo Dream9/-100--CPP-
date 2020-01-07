@@ -354,13 +354,18 @@ int main(int argc, char** argv) {
 #ifdef NO_062
 	op = ConnectNumber::LINE_8;
 #endif
-	ConnectNumber cn061("seg.png",
+	ConnectNumber cn061("48neighbor.png",
 					op,
 					true);
 	Solve(cn061);
 #endif
 
 
+#if (defined NO_063)
+	Thin tn063("g1.png",
+					true);
+	Solve(tn063);
+#endif
 
 	return 0;
 }

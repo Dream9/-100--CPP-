@@ -4,7 +4,7 @@
 #include"Solution/solution.h"
 
 
-#define NO_059
+#define NO_063
 
 #ifdef NO_001
 #include"Solution/001-010/channel_swap.h"
@@ -157,7 +157,9 @@
 #include"Solution/061-070/connect_number.h"
 #endif
 
-
+#if defined NO_063
+#include"Solution/061-070/thin.h"
+#endif
 
 
 
