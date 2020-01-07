@@ -91,6 +91,10 @@ void setConnectNumber(cv::InputArray src,
 	cv::OutputArray dst, 
 	int flag = LineTypes::LINE_4);
 
+
+//brief:
+void thin(cv::InputArray src, cv::OutputArray dst, int flag);
+
 }//£¡namespace detail
 
 #endif !_SOLUTION_MORPHOLOGY_TRANSFORM_H_

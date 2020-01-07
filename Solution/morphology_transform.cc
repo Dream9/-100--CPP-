@@ -6,6 +6,7 @@
 
 #include<unordered_map>
 #include<map>
+#include<numeric>
 
 #define OUT_RANGE(x,y,width,height) (x<0 || y<0 || x>=width || y>=height)
 
@@ -317,7 +318,8 @@ int getConnectComponent(cv::InputArray src, cv::OutputArray dst, int flag, bool 
 	}
 }
 
-//brief:
+//brief:标记每个像素的邻接数
+//becare:不同的连接数代表该点的特征
 void setConnectNumber(cv::InputArray src, cv::OutputArray dst, int flag) {
 	assert(src.type() == CV_8UC1);
 
@@ -328,32 +330,135 @@ void setConnectNumber(cv::InputArray src, cv::OutputArray dst, int flag) {
 	cv::Mat out = dst.getMat();
 	memset(out.data, 0, out.total()*out.elemSize());
 
-	//全部8个方向
-	int orientation[][2] = { {0,-1},{0,1},{-1,0},{1,0},
-							{-1,-1},{-1,1},{1,-1},{1,1} };
+	//全部8个方向，根据flag决定4/8邻接
+	//int orientation[][2] = { {0,-1},{0,1},{-1,0},{1,0},
+	//						{-1,-1},{-1,1},{1,-1},{1,1} };
 
-	int end_index = flag == LINE_4 ? 4 : flag == LINE_8 ? 8 : -1;
-	if (end_index == -1) {
+	//按逆时针方向组织
+	int orientation[][2] = { {1,0},{1,-1},{0,-1},{-1,-1},
+							{-1,0},{-1,1},{0,1},{1,1} };
+	int end_index = sizeof orientation / sizeof (int*);
+
+	if (flag != LINE_4 && flag != LINE_8) {
 		dealException(digital::kParameterNotMatch);
 		return ;
 	}
+	uint8_t value = flag == LINE_8;//LINE_8的连接数需要取反
+
 	auto iter = out.data;
-	auto calc_connection = [&iter, end_index, orientation, size](int x, int y, uint8_t* cursor) {
+	auto calc_connection = [&iter, end_index, value, orientation, size](int x, int y, uint8_t* cursor) {
 		if (*cursor == 0) {
 			++iter;
 			return;
 		}
+
+		//统计邻接数
 		uint8_t counter = 0;
+		uint8_t vec[8 + 2];//提前记录下来
 		for (int i = 0; i < end_index; ++i) {
 			int a = x + orientation[i][0];
 			int b = y + orientation[i][1];
-			if (OUT_RANGE(a, b, size.width, size.height))
+			if (OUT_RANGE(a, b, size.width, size.height)) {
+				vec[i] = value;
 				continue;
-			counter += cursor[orientation[i][1]*size.width + orientation[i][0]] != 0;
+			}
+
+			vec[i] = cursor[orientation[i][1] * size.width + orientation[i][0]] != 0 ?
+				1 - value : value;
+		}
+		vec[8] = vec[0];//for 循环序列
+		vec[9] = vec[1];
+
+		//从四个方向计算连接数
+		for(int i=0; i<end_index; i+=2){
+			if (vec[i] == 0)
+				continue;
+			counter += vec[i] - vec[i] * vec[i + 1] * vec[i + 2];
 		}
 		*iter++ = counter;
 	};
 	detail::geometricTriversal(in, calc_connection);
+}
+
+//brief:细化算法
+void thin(cv::InputArray src, cv::OutputArray dst, int flag) {
+	assert(src.type() == CV_8UC1);
+	cv::Mat in = src.getMat();
+
+	cv::Size size = src.size();
+	dst.create(size, src.type());
+	cv::Mat out = dst.getMat();
+
+	//
+	auto iter = out.data;
+	auto set_one = [&](uint8_t* cursor) {
+		*iter++ = *cursor == 0 ? 0 : UINT8_MAX;
+	};
+	detail::grayscaleTransform(in, set_one);
+
+	size_t jump = out.step;
+	bool end_iteration = true;
+
+	do{
+		end_iteration = true;
+		cv::Mat tmp = out.clone();
+		iter = tmp.data;
+
+		auto skeleton = [&iter, &end_iteration, size, jump](int x, int y, uint8_t* cursor) {
+			if (*cursor == 0) {
+				++iter;
+				return;
+			}
+			int orientation[][2] = { {1,0},{1,-1},{0,-1},{-1,-1},
+							{-1,0},{-1,1},{0,1},{1,1} };
+
+			int end_index = sizeof orientation / sizeof(int*);
+			uint8_t counter = 0;
+			uint8_t vec[8 + 2];//提前记录下来
+			for (int i = 0; i < end_index; ++i) {
+				int a = x + orientation[i][0];
+				int b = y + orientation[i][1];
+				if (OUT_RANGE(a, b, size.width, size.height)) {
+					vec[i] = 0;
+					continue;
+				}
+				vec[i] = iter[orientation[i][1] * size.width + orientation[i][0]] != 0 ?
+					1 : 0;
+			}
+			vec[8] = vec[0];//for 循环序列
+			vec[9] = vec[1];
+
+			//条件1：4邻域不是满的
+			uint8_t connection_4 = iter[1] != 0 + iter[-1] != 0 +
+				iter[-size.width] != 0 + iter[size.width] != 0;
+			//uint8_t connection_4 = vec[0] + vec[2] + vec[4] + vec[6];
+			++iter;
+			if (connection_4 == 4)
+				return;
+
+			//条件2：4连接数为1（属于可删除点或端点）
+			for (int i = 0; i < end_index; i += 2) {
+				if (vec[i] == 0)
+					continue;
+				counter += vec[i] - vec[i] * vec[i + 1] * vec[i + 2];
+			}
+			if (counter != 1)
+				return;
+
+			//条件3：8邻域内至少有三个前景像素（说明这个点是4连接时的毛刺）
+			if (3 > std::accumulate(vec, vec + 8, 0))
+				return;
+
+			//那么这个点是可删除的
+			*cursor = 0;
+			end_iteration = false;
+		};
+
+		detail::geometricTriversal(out, skeleton);
+		assert(iter == tmp.data + tmp.total());
+
+	} while (!end_iteration);
+
 }
 
 
