@@ -4,6 +4,13 @@
 #include"Solution/grayscale_transfrom.h"
 #include"Solution/type_extension.h"
 
+
+
+#include"Solution/solution.h"
+#include<opencv2/highgui.hpp>
+
+
+
 #include<unordered_map>
 #include<map>
 #include<numeric>
@@ -25,6 +32,14 @@ int __dfs_connect8(cv::Mat& src, cv::Mat& dst, int x, int y, uint8_t value, int 
 
 //brief:quick_union算法的基础
 int __find(std::map<int, int>&dict, int val);
+
+//brief:计算连接数
+//becare:由于计算基于4邻接/8邻接的公式，除了取反之外都一样，这用户传入的数组只要已经取反了
+//       那么得到的就是基于8邻接的连接数
+int __connect_number(int* vec);
+
+//brief:hildretch
+void __hilditch(cv::Mat& src, cv::Mat& dst);
 
 //基于工厂的类型反射机制
 class MorphFactory;
@@ -353,8 +368,7 @@ void setConnectNumber(cv::InputArray src, cv::OutputArray dst, int flag) {
 		}
 
 		//统计邻接数
-		uint8_t counter = 0;
-		uint8_t vec[8 + 2];//提前记录下来
+		int vec[8];//提前记录下来
 		for (int i = 0; i < end_index; ++i) {
 			int a = x + orientation[i][0];
 			int b = y + orientation[i][1];
@@ -366,16 +380,8 @@ void setConnectNumber(cv::InputArray src, cv::OutputArray dst, int flag) {
 			vec[i] = cursor[orientation[i][1] * size.width + orientation[i][0]] != 0 ?
 				1 - value : value;
 		}
-		vec[8] = vec[0];//for 循环序列
-		vec[9] = vec[1];
-
 		//从四个方向计算连接数
-		for(int i=0; i<end_index; i+=2){
-			if (vec[i] == 0)
-				continue;
-			counter += vec[i] - vec[i] * vec[i + 1] * vec[i + 2];
-		}
-		*iter++ = counter;
+		*iter++ = static_cast<uint8_t>(__connect_number(vec));
 	};
 	detail::geometricTriversal(in, calc_connection);
 }
@@ -389,6 +395,11 @@ void thin(cv::InputArray src, cv::OutputArray dst, int flag) {
 	dst.create(size, src.type());
 	cv::Mat out = dst.getMat();
 
+	__hilditch(in, out);
+	
+	return;
+		
+
 	//
 	auto iter = out.data;
 	auto set_one = [&](uint8_t* cursor) {
@@ -401,48 +412,40 @@ void thin(cv::InputArray src, cv::OutputArray dst, int flag) {
 
 	do{
 		end_iteration = true;
-		cv::Mat tmp = out.clone();
-		iter = tmp.data;
+		//cv::Mat tmp = out.clone();
+		//iter = tmp.data;
 
-		auto skeleton = [&iter, &end_iteration, size, jump](int x, int y, uint8_t* cursor) {
+		auto skeleton = [/*&iter,*/ &end_iteration, size, jump](int x, int y, uint8_t* cursor) {
 			if (*cursor == 0) {
-				++iter;
+				//++iter;
 				return;
 			}
 			int orientation[][2] = { {1,0},{1,-1},{0,-1},{-1,-1},
 							{-1,0},{-1,1},{0,1},{1,1} };
 
 			int end_index = sizeof orientation / sizeof(int*);
-			uint8_t counter = 0;
-			uint8_t vec[8 + 2];//提前记录下来
+			int vec[8];//提前记录下来
 			for (int i = 0; i < end_index; ++i) {
 				int a = x + orientation[i][0];
 				int b = y + orientation[i][1];
 				if (OUT_RANGE(a, b, size.width, size.height)) {
-					vec[i] = 0;
+					vec[i] = 0;//此处基于4邻接
 					continue;
 				}
-				vec[i] = iter[orientation[i][1] * size.width + orientation[i][0]] != 0 ?
-					1 : 0;
+				vec[i] = cursor[orientation[i][1] * size.width + orientation[i][0]] != 0 ?
+					1 - 0 : 0;
 			}
-			vec[8] = vec[0];//for 循环序列
-			vec[9] = vec[1];
 
 			//条件1：4邻域不是满的
-			uint8_t connection_4 = iter[1] != 0 + iter[-1] != 0 +
-				iter[-size.width] != 0 + iter[size.width] != 0;
-			//uint8_t connection_4 = vec[0] + vec[2] + vec[4] + vec[6];
-			++iter;
+			//uint8_t connection_4 = iter[1] != 0 + iter[-1] != 0 +
+			//	iter[-size.width] != 0 + iter[size.width] != 0;
+			uint8_t connection_4 = vec[0] + vec[2] + vec[4] + vec[6];
+			//++iter;
 			if (connection_4 == 4)
 				return;
 
 			//条件2：4连接数为1（属于可删除点或端点）
-			for (int i = 0; i < end_index; i += 2) {
-				if (vec[i] == 0)
-					continue;
-				counter += vec[i] - vec[i] * vec[i + 1] * vec[i + 2];
-			}
-			if (counter != 1)
+			if (__connect_number(vec) != 1)
 				return;
 
 			//条件3：8邻域内至少有三个前景像素（说明这个点是4连接时的毛刺）
@@ -455,7 +458,7 @@ void thin(cv::InputArray src, cv::OutputArray dst, int flag) {
 		};
 
 		detail::geometricTriversal(out, skeleton);
-		assert(iter == tmp.data + tmp.total());
+		//assert(iter == tmp.data + tmp.total());
 
 	} while (!end_iteration);
 
@@ -565,6 +568,123 @@ int __find(std::map<int, int>&dict, int val) {
 
 	return head;
 }
+
+#define NEIGHBOR_NUMBER 8
+//brief:计算连接数
+//     传入的vec必须是从任意一个4邻域点开始沿着顺时针记录，
+//     因此必须至少有8个元素，且用1表示前景，0表示背景
+int __connect_number(int* vec) {
+	assert(vec);
+
+	int counter = 0;
+	for (int i = 0; i < 8; i += 2) {//0，2，4，6位置为4邻域像素
+		//FIXME:最后一个值有溢出风险
+		//counter += vec[i] - vec[i] * vec[i + 1] * vec[(i + 2];
+		counter += vec[i] - vec[i] * vec[i + 1] * vec[(i + 2) % NEIGHBOR_NUMBER];
+	}
+	return counter;
+}
+#undef NEIGHBOR_NUMBER
+
+#define CONNECT8_TRUE_VALUE 0
+//brief:基于Hilditch算法的细化
+void __hilditch(cv::Mat& src, cv::Mat& dst) {
+	auto iter = dst.data;
+	auto set_one = [&iter](uint8_t* cursor) {
+		*iter++ = *cursor == 0 ? 0 : UINT8_MAX;
+	};
+	detail::grayscaleTransform(src, set_one);//获得01记录的二值图像
+
+	size_t jump = dst.step;
+	bool end_iteration = true;
+	cv::Size size = dst.size();
+	const uint8_t kMarked = 128;
+
+	auto skeleton = [&iter, &end_iteration, size, jump, kMarked](int x, int y, uint8_t* cursor) {
+		if (*cursor == 0) {
+			++iter;
+			return;
+		}
+		int orientation[][2] = { {1,0},{1,-1},{0,-1},{-1,-1},
+						{-1,0},{-1,1},{0,1},{1,1} };
+
+		int end_index = sizeof orientation / sizeof(int*);
+		int vec[8];
+		//本轮迭代前邻域像素信息
+		for (int i = 0; i < end_index; ++i) {
+			int a = x + orientation[i][0];
+			int b = y + orientation[i][1];
+			if (OUT_RANGE(a, b, size.width, size.height)) {
+				vec[i] = 1 - CONNECT8_TRUE_VALUE;//此处基于8邻接
+				continue;
+			}
+			vec[i] = iter[orientation[i][1] * size.width + orientation[i][0]] != 0 ?
+				CONNECT8_TRUE_VALUE : 1 - CONNECT8_TRUE_VALUE;
+		}
+
+		//本轮迭代到此处时的已访问像素信息
+		bool previous_mark[4];
+		for (int i = 0; i < sizeof previous_mark / sizeof(bool); ++i) {
+			previous_mark[i] = (vec[i + 1] == CONNECT8_TRUE_VALUE) &&
+				(cursor[orientation[i + 1][1] * size.width + orientation[i + 1][0]] == kMarked);
+		}
+		++iter;
+
+		//条件1：4邻域不是满的（防止空洞）
+		if (vec[0] + vec[2] + vec[4] +vec[6] == 0)//!!!becare:这里的vec取反了！！！
+			return;
+
+		//条件2：在进行本轮迭代之前8连接数为1（含已标记像素）
+		if (__connect_number(vec) != 1)
+			return;
+
+		//条件3：在进行本轮迭代之前8邻域内至少有两个前景像素（防止线段被过度缩小）, 并且至多6个前景像素（防止过度凹陷，即防止分叉）
+		int background = std::accumulate(vec, vec + 8, 0);//becare:vec是记录的基于八连接的0-1值，是取反的。。。
+		if(background > 6 || background < 2)
+			return;
+
+		//条件4：去除本轮已标记像素后，8邻域内至少还有1个值
+		if (background + std::accumulate(previous_mark, previous_mark + 4, 0) > 7)
+			return;
+
+		//条件5:逐个删除本轮已标记像素后，该点重新计算的连接数依然满足条件
+		for (int i = 0; i < sizeof previous_mark / sizeof(bool); ++i) {
+			if (!previous_mark[i])
+				continue;
+			vec[i + 1] = 1;
+			if (__connect_number(vec) != 1)
+				return;
+			vec[i + 1] = 0;
+		}
+
+		//那么这个点应当被标记
+		*cursor = kMarked;
+		end_iteration = false;
+	};
+	
+	auto set_zero = [](uint8_t* cursor) {
+		*cursor = *cursor == UINT8_MAX ? UINT8_MAX : 0;
+	};
+
+	do{//迭代，直到收敛
+		end_iteration = true;
+		cv::Mat tmp = dst.clone();
+		iter = tmp.data;
+
+		detail::geometricTriversal(dst, skeleton);
+		assert(iter == tmp.data + tmp.total());
+
+		detail::grayscaleTransform(dst, set_zero);
+#ifdef SHOW_PROCESS
+		cv::namedWindow("processing",cv::WINDOW_NORMAL);
+		cv::imshow("processing",dst);
+		cv::waitKey(0);
+		cv::destroyAllWindows();
+#endif
+	} while (!end_iteration);
+}
+
+#undef CONNECT8_TRUE_VALUE
 
 }//!namespace
 
