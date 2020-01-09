@@ -4,7 +4,7 @@
 #include"Solution/solution.h"
 
 
-#define NO_063
+#define NO_052
 
 #ifdef NO_001
 #include"Solution/001-010/channel_swap.h"
