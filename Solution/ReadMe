@@ -1,5 +1,7 @@
 solution.[h/cc] 问题解答基类
+type_extension.[h/cc] 基本类型扩展
 base.[h/cc] 与窗口操作有关的功能扩展
 grayscale_transfrom.[h/cc] 与单灰度变换有关的功能扩展
 geometric_transfrom.[h/cc] 与几何变换有关的功能扩展
-type_extension.[h/cc] 基本类型扩展
+morphology_transform.[h/cc] 与形态学变换有关的功能扩展
+
