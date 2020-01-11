@@ -361,9 +361,23 @@ int main(int argc, char** argv) {
 #endif
 
 
+#if (defined NO_063) || (defined NO_064) || (defined NO_065)
+	int op;
+#endif
 #if (defined NO_063)
+	op = Thin::Hilditch;
+#endif
+#if (defined NO_064)
+	op = Thin::Hilditch;
+#endif
+#if (defined NO_065)
+	op = Thin::ZhangSuen;
+#endif
+
+#if (defined NO_063) || (defined NO_064) || (defined NO_065)
 	Thin tn063("g1.png",
-					true);
+				op,
+				true);
 	Solve(tn063);
 #endif
 
