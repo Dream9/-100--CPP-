@@ -25,9 +25,16 @@ enum MorphTypes {
 	//!<   .- Only supported for CV_8UC1 binary images. A tutorial can be found in the documentation
 };
 
+//邻接方式
 enum LineTypes {
 	LINE_4 = cv::LINE_4,
 	LINE_8 = cv::LINE_8,
+};
+
+//细化方式
+enum ThinType {
+	Hilditch = 1,
+	ZhangSuen =2,
 };
 
 //brief:形态学膨胀，详情参见cv::dilate
@@ -42,7 +49,7 @@ void dilate(cv::Mat& src,
 	cv::Point anchor = cv::Point(-1, -1),
 	int iterations = 1);
 
-//breif:形态学侵蚀
+//breif:形态学侵蚀，详情参见cv::erode
 //parameter：src:输入
 //           dst输出
 //           kernel:结构元SE
@@ -85,15 +92,21 @@ int getConnectComponent(cv::InputArray src,
 
 //brief:计算每个点的连通数目
 //parameter:src:输入图像
-//          dst:输出图像
+//          dst:输出图像，输出结果仅包含0，1，2，3，4共5种可能
 //          flag:连通类型，默认采用4连通
+//becare:内部点和背景点的连通数目肯定都是1，如需取反，需用户自行与原始二值图像做并集
 void setConnectNumber(cv::InputArray src,
 	cv::OutputArray dst, 
 	int flag = LineTypes::LINE_4);
 
 
-//brief:
-void thin(cv::InputArray src, cv::OutputArray dst, int flag);
+//brief:二值图像细化
+//parameter:src:输入，要求必须是CV_8UC1二值图像，凡是非零的都是前景点
+//          dst:输出，type==src.type,且UINT8_MAX为前景点
+//          flag:细化方式，默认采用Hilditch算法完成
+void thin(cv::InputArray src,
+	cv::OutputArray dst, 
+	int flag = ThinType::Hilditch);
 
 }//！namespace detail
 

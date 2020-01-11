@@ -38,8 +38,11 @@ int __find(std::map<int, int>&dict, int val);
 //       那么得到的就是基于8邻接的连接数
 int __connect_number(int* vec);
 
-//brief:hildretch
+//brief:hildretch算法
 void __hilditch(cv::Mat& src, cv::Mat& dst);
+
+//brief:
+void __zhang_suen(cv::Mat& src, cv::Mat& dst);
 
 //基于工厂的类型反射机制
 class MorphFactory;
@@ -395,73 +398,79 @@ void thin(cv::InputArray src, cv::OutputArray dst, int flag) {
 	dst.create(size, src.type());
 	cv::Mat out = dst.getMat();
 
-	__hilditch(in, out);
-	
+	switch (flag)
+	{
+	case ThinType::Hilditch:
+		__hilditch(in, out);
+		return;
+	case ThinType::ZhangSuen:
+		__zhang_suen(in, out);
+		return;
+	default:
+		dealException(digital::kParameterNotMatch);
+	}
+
 	return;
-		
 
-	//
-	auto iter = out.data;
-	auto set_one = [&](uint8_t* cursor) {
-		*iter++ = *cursor == 0 ? 0 : UINT8_MAX;
-	};
-	detail::grayscaleTransform(in, set_one);
+	//以下为初期探索版本，已废弃
+	//auto iter = out.data;
+	//auto set_one = [&](uint8_t* cursor) {
+	//	*iter++ = *cursor == 0 ? 0 : UINT8_MAX;
+	//};
+	//detail::grayscaleTransform(in, set_one);
 
-	size_t jump = out.step;
-	bool end_iteration = true;
+	//size_t jump = out.step;
+	//bool end_iteration = true;
 
-	do{
-		end_iteration = true;
-		//cv::Mat tmp = out.clone();
-		//iter = tmp.data;
+	//do{
+	//	end_iteration = true;
+	//	//cv::Mat tmp = out.clone();
+	//	//iter = tmp.data;
 
-		auto skeleton = [/*&iter,*/ &end_iteration, size, jump](int x, int y, uint8_t* cursor) {
-			if (*cursor == 0) {
-				//++iter;
-				return;
-			}
-			int orientation[][2] = { {1,0},{1,-1},{0,-1},{-1,-1},
-							{-1,0},{-1,1},{0,1},{1,1} };
+	//	auto skeleton = [/*&iter,*/ &end_iteration, size, jump](int x, int y, uint8_t* cursor) {
+	//		if (*cursor == 0) {
+	//			//++iter;
+	//			return;
+	//		}
+	//		int orientation[][2] = { {1,0},{1,-1},{0,-1},{-1,-1},
+	//						{-1,0},{-1,1},{0,1},{1,1} };
 
-			int end_index = sizeof orientation / sizeof(int*);
-			int vec[8];//提前记录下来
-			for (int i = 0; i < end_index; ++i) {
-				int a = x + orientation[i][0];
-				int b = y + orientation[i][1];
-				if (OUT_RANGE(a, b, size.width, size.height)) {
-					vec[i] = 0;//此处基于4邻接
-					continue;
-				}
-				vec[i] = cursor[orientation[i][1] * size.width + orientation[i][0]] != 0 ?
-					1 - 0 : 0;
-			}
+	//		int end_index = sizeof orientation / sizeof(int*);
+	//		int vec[8];//提前记录下来
+	//		for (int i = 0; i < end_index; ++i) {
+	//			int a = x + orientation[i][0];
+	//			int b = y + orientation[i][1];
+	//			if (OUT_RANGE(a, b, size.width, size.height)) {
+	//				vec[i] = 0;//此处基于4邻接
+	//				continue;
+	//			}
+	//			vec[i] = cursor[orientation[i][1] * size.width + orientation[i][0]] != 0 ?
+	//				1 - 0 : 0;
+	//		}
 
-			//条件1：4邻域不是满的
-			//uint8_t connection_4 = iter[1] != 0 + iter[-1] != 0 +
-			//	iter[-size.width] != 0 + iter[size.width] != 0;
-			uint8_t connection_4 = vec[0] + vec[2] + vec[4] + vec[6];
-			//++iter;
-			if (connection_4 == 4)
-				return;
+	//		//条件1：4邻域不是满的
+	//		uint8_t connection_4 = vec[0] + vec[2] + vec[4] + vec[6];
+	//		//++iter;
+	//		if (connection_4 == 4)
+	//			return;
 
-			//条件2：4连接数为1（属于可删除点或端点）
-			if (__connect_number(vec) != 1)
-				return;
+	//		//条件2：4连接数为1（属于可删除点或端点）
+	//		if (__connect_number(vec) != 1)
+	//			return;
 
-			//条件3：8邻域内至少有三个前景像素（说明这个点是4连接时的毛刺）
-			if (3 > std::accumulate(vec, vec + 8, 0))
-				return;
+	//		//条件3：8邻域内至少有三个前景像素（说明这个点是4连接时的毛刺）
+	//		if (3 > std::accumulate(vec, vec + 8, 0))
+	//			return;
 
-			//那么这个点是可删除的
-			*cursor = 0;
-			end_iteration = false;
-		};
+	//		//那么这个点是可删除的
+	//		*cursor = 0;
+	//		end_iteration = false;
+	//	};
 
-		detail::geometricTriversal(out, skeleton);
-		//assert(iter == tmp.data + tmp.total());
+	//	detail::geometricTriversal(out, skeleton);
+	//	//assert(iter == tmp.data + tmp.total());
 
-	} while (!end_iteration);
-
+	//} while (!end_iteration);
 }
 
 
@@ -599,8 +608,9 @@ void __hilditch(cv::Mat& src, cv::Mat& dst) {
 	bool end_iteration = true;
 	cv::Size size = dst.size();
 	const uint8_t kMarked = 128;
+	std::vector<uint8_t*> record;
 
-	auto skeleton = [&iter, &end_iteration, size, jump, kMarked](int x, int y, uint8_t* cursor) {
+	auto skeleton = [&iter, &end_iteration, &record, size, jump, kMarked](int x, int y, uint8_t* cursor) {
 		if (*cursor == 0) {
 			++iter;
 			return;
@@ -659,22 +669,26 @@ void __hilditch(cv::Mat& src, cv::Mat& dst) {
 
 		//那么这个点应当被标记
 		*cursor = kMarked;
+		record.emplace_back(cursor);
 		end_iteration = false;
 	};
-	
-	auto set_zero = [](uint8_t* cursor) {
-		*cursor = *cursor == UINT8_MAX ? UINT8_MAX : 0;
-	};
+	//auto set_zero = [](uint8_t* cursor) {//更改为采用记录标记索引，然后修改标记像素的实现
+	//	*cursor = *cursor == UINT8_MAX ? UINT8_MAX : 0;
+	//};
 
 	do{//迭代，直到收敛
 		end_iteration = true;
 		cv::Mat tmp = dst.clone();
 		iter = tmp.data;
+		record.clear();
 
 		detail::geometricTriversal(dst, skeleton);
 		assert(iter == tmp.data + tmp.total());
 
-		detail::grayscaleTransform(dst, set_zero);
+		//detail::grayscaleTransform(dst, set_zero);//放弃该实现
+		for (auto cursor : record)
+			*cursor = 0;
+
 #ifdef SHOW_PROCESS
 		cv::namedWindow("processing",cv::WINDOW_NORMAL);
 		cv::imshow("processing",dst);
@@ -684,8 +698,90 @@ void __hilditch(cv::Mat& src, cv::Mat& dst) {
 	} while (!end_iteration);
 }
 
-#undef CONNECT8_TRUE_VALUE
 
+//brief:zhang_suen细化
+//      参考http://cgm.cs.mcgill.ca/~godfried/teaching/projects97/azar/skeleton.html#algorithm
+void __zhang_suen(cv::Mat& src, cv::Mat& dst) {
+	auto iter = dst.data;
+	auto set_one = [&iter](uint8_t* cursor) {
+		*iter++ = *cursor == 0 ? 0 : UINT8_MAX;
+	};
+	detail::grayscaleTransform(src, set_one);//获得01记录的二值图像
+
+	size_t jump = dst.step;
+	bool end_iteration = true;
+	cv::Size size = dst.size();
+	int pos1;
+	int pos2;
+	std::vector<uint8_t*>recorder;
+
+	auto zhang_suen= [size, &pos1, &pos2, &end_iteration, &recorder](int x, int y, uint8_t* cursor) {
+		if (*cursor == 0)
+			return;
+		int orientation[][2] = { {1,0},{1,-1},{0,-1},{-1,-1},
+						{-1,0},{-1,1},{0,1},{1,1} };
+
+		int end_index = sizeof orientation / sizeof(int*);
+		int vec[8];
+		//当前邻域像素信息
+		for (int i = 0; i < end_index; ++i) {
+			int a = x + orientation[i][0];
+			int b = y + orientation[i][1];
+			if (OUT_RANGE(a, b, size.width, size.height)) {
+				vec[i] = 1 - CONNECT8_TRUE_VALUE;//此处基于8邻接
+				continue;
+			}
+			vec[i] = cursor[orientation[i][1] * size.width + orientation[i][0]] != 0 ?
+				CONNECT8_TRUE_VALUE : 1 - CONNECT8_TRUE_VALUE;
+		}
+
+		//条件1：八邻域像素个数位于2-6之间
+		int sum = std::accumulate(vec,vec+sizeof vec/sizeof (int),0);
+		if (sum > 6 || sum < 2)
+			return;
+
+		//条件2：顺时针为差为由0->1的个数为1个，这里采用了逆时针，故1->0次数为1个
+		int prev_v = vec[7];
+		int count_connect = 0;
+		for (int cur_v : vec) {
+			count_connect += cur_v - prev_v == -1;
+			prev_v = cur_v;
+		}
+		if (count_connect != 1)//区别于计算连通数，两者也不是等价的
+			return;
+
+		//条件3：右/上半侧4邻域像素至少有一个背景，pos1==6:右，pos1==4:上侧
+		if (vec[0] + vec[2] + vec[pos1] < 1)
+			return;
+		
+		//条件4：下半侧4邻域像素至少有一个背景，pos2==0:下，pos2==2:左
+		if (vec[pos2] + vec[4] + vec[6] < 1)
+			return;
+
+		//*cursor = 1;//FIXME:延迟更改
+		recorder.emplace_back(cursor);
+		end_iteration = false;
+	};
+
+	do {
+		end_iteration = true;
+		//step1:第一次迭代
+		pos1 = 6, pos2 = 0;
+		detail::geometricTriversal(dst, zhang_suen);
+		for (auto cursor : recorder)
+			*cursor = 0;
+
+		//step2:第二次迭代
+		pos1 = 4, pos2 = 2;
+		detail::geometricTriversal(dst, zhang_suen);
+		for (auto cursor : recorder)
+			*cursor = 0;
+		//digital::__MatrixTest(&dst);
+
+	} while (!end_iteration);
+}
+
+#undef CONNECT8_TRUE_VALUE
 }//!namespace
 
 #undef OUT_RANGE

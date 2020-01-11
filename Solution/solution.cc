@@ -163,6 +163,7 @@ void __MatrixTest(void* Mat1) {
 
 	auto cur = img.data; 
 	for (int i = 0; i < rows; ++i) {
+		std::cout << "µÚ" << i << "ÐÐ£º";
 		for (int j = 0; j < cols; ++j) {
 			for (int c = 0; c < channels; ++c) {
 				__cout_data(depth, cur);
