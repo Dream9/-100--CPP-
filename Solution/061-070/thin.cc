@@ -7,13 +7,16 @@ namespace digital {
 
 //brief:
 void Thin::operator()() {
+	static_assert(detail::Hilditch == Hilditch, "compability error");
+	static_assert(detail::ZhangSuen== ZhangSuen, "compability error");
+	
 	cv::Mat data = cv::imread(getPath(), cv::IMREAD_GRAYSCALE);
 	if (data.empty()) {
 		dealException(kFileError);
 		return;
 	}
 	cv::Mat img;
-	detail::thin(data, img, -1);
+	detail::thin(data, img, op_);
 
 	if (needShowOriginal())
 		show(&data, &img);
