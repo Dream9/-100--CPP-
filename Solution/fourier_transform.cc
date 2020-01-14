@@ -54,7 +54,8 @@ void __dft_column(cv::Mat& src, cv::Mat& tmp, double factor_inverse, double scal
 
 //brief:以工厂模式替换if-else
 class FDF_factory;
-std::unordered_map<int, FDF_factory*> dict;
+//becare:注意，这不是线程安全的，如果需要线程安全，可以把他定义为thread_local生命期变量
+std::unordered_map<int, FDF_factory*> dict;//FIXME:or just use map?
 
 class FDF_factory{
 public:

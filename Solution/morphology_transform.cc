@@ -43,7 +43,8 @@ void __zhang_suen(cv::Mat& src, cv::Mat& dst);
 
 //基于工厂的类型反射机制
 class MorphFactory;
-std::unordered_map<int, MorphFactory*> MorphDict;
+//becare:注意，这不是线程安全的，如果需要线程安全，可以把他定义为thread_local生命期变量
+std::unordered_map<int, MorphFactory*> MorphDict;//FIXME:or just use map?
 
 class MorphFactory {
 public:

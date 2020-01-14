@@ -39,8 +39,9 @@ void __show_hough_space(cv::InputArray src) {
 	cv::destroyWindow(name);
 }
 
-//brief:
+//brief:基于工厂的类型反射机制
 class MatchTemplateFactory;
+//becare:注意，这不是线程安全的，如果需要线程安全，可以把他定义为thread_local生命期变量
 std::map<int, MatchTemplateFactory*> g_match_dict;
 class MatchTemplateFactory{
 public:
@@ -107,6 +108,12 @@ public:
 
 		g_match_dict.insert({ detail::TM_ABSDIFF,new MatchAbsdiff});
 		g_match_dict.insert({ detail::TM_ABSDIFF_NORMED,new MatchAbsdiffNormed});
+	}
+
+	~GlobalDictInit() {
+		for (auto item : g_match_dict) {
+			delete(item.second);
+		}
 	}
 };
 GlobalDictInit __init_match_dict;//位于匿名空间中，外部不可见
