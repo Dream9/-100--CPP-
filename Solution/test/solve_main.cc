@@ -212,23 +212,23 @@ int main(int argc, char** argv) {
 
 	//以下测试共用一个用例
 #if (defined NO_028) || (defined NO_029) || (defined NO_030) || (defined NO_031)
-	int ops = 0;
+	int affine_ops = 0;
 #endif
 #ifdef NO_028
-	ops = ops | AffineTransformation::TRANSLATION;
+	affine_ops = affine_ops | AffineTransformation::TRANSLATION;
 #endif
 #ifdef NO_029
-	ops = ops | AffineTransformation::SCALE;
+	affine_ops = affine_ops | AffineTransformation::SCALE;
 #endif
 #ifdef NO_030
-	ops = ops | AffineTransformation::ROTATION;
+	affine_ops = affine_ops | AffineTransformation::ROTATION;
 #endif
 #ifdef NO_031
-	ops = ops | AffineTransformation::LEAN;
+	affine_ops = affine_ops | AffineTransformation::LEAN;
 #endif
 #if (defined NO_028) || (defined NO_029) || (defined NO_030) || (defined NO_031)
 	AffineTransformation at028("imori.jpg",
-					ops,
+					affine_ops,
 					true); 
 	Solve(at028);
 #endif
@@ -330,6 +330,38 @@ int main(int argc, char** argv) {
 	Solve(md047);
 #endif
 
+#if (defined NO_054) || (defined NO_055) || (defined NO_056) || (defined NO_057)
+	int match_ops;
+
+#endif
+#ifdef NO_054
+	match_ops = MatchTemplate::TM_SQDIFF;
+#endif
+#ifdef NO_055
+	coutInfo("055题就是用L1范数衡量相似性，在opencv的matchTemplate中并没有封装本功能。"
+		"实现起来和054差不多，就是将L2范数部分改成绝对值累和即可");
+	match_ops = MatchTemplate::TM_ABSDIFF;
+#endif
+#ifdef NO_056
+	match_ops = MatchTemplate::TM_CCORR;
+#endif
+#ifdef NO_057
+	match_ops = MatchTemplate::TM_CCOEFF;
+#endif
+
+
+#if (defined NO_054) || (defined NO_055) || (defined NO_056) || (defined NO_057)
+	coutInfo("默认的处理方式都采用了归一化的处理，如果需要测试非归一化的方法，请在编译"
+	"match_template.[h/cc]时，加入-DWITHOUT_NORMED，然后重新编译本测试文件");
+	MatchTemplate mt054("imori.jpg",
+					"imori_part.jpg",
+					match_ops,
+					true);
+	Solve(mt054);
+#endif
+
+
+
 	//以下共享一个测试
 #if (defined NO_058) || (defined NO_059)
 	int op;
@@ -362,21 +394,21 @@ int main(int argc, char** argv) {
 
 
 #if (defined NO_063) || (defined NO_064) || (defined NO_065)
-	int op;
+	int thin_op;
 #endif
 #if (defined NO_063)
-	op = Thin::Hilditch;
+	thin_op = Thin::Hilditch;
 #endif
 #if (defined NO_064)
-	op = Thin::Hilditch;
+	thin_op = Thin::Hilditch;
 #endif
 #if (defined NO_065)
-	op = Thin::ZhangSuen;
+	thin_op = Thin::ZhangSuen;
 #endif
 
 #if (defined NO_063) || (defined NO_064) || (defined NO_065)
 	Thin tn063("g1.png",
-				op,
+				thin_op,
 				true);
 	Solve(tn063);
 #endif

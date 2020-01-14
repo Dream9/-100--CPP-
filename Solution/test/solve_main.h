@@ -4,7 +4,7 @@
 #include"Solution/solution.h"
 
 
-#define NO_065
+#define NO_055
 
 #ifdef NO_001
 #include"Solution/001-010/channel_swap.h"
@@ -147,6 +147,10 @@
 #if (defined NO_047) || (defined NO_048) || (defined NO_049) || (defined NO_050) || \
     (defined NO_051) || (defined NO_052) || (defined NO_053)
 #include"Solution/041-050/morphology.h"
+#endif
+
+#if (defined NO_054) || (defined NO_055) || (defined NO_056) || (defined NO_057)
+#include"Solution/051-060/match_template.h"
 #endif
 
 #if (defined NO_058) || (defined NO_059)
