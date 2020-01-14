@@ -1,11 +1,14 @@
 #include"Solution/geometry_match.h"
 #include"Solution/geometric_transform.h"
+#include"Solution/grayscale_transfrom.h"
+#include"Solution/base.h"
 #include"Solution/type_extension.h"
 
 #include<opencv2/highgui.hpp>
 
 #include<ctime>
 #include<random>
+#include<map>
 
 namespace {
 
@@ -35,6 +38,78 @@ void __show_hough_space(cv::InputArray src) {
 	cv::waitKey(0);
 	cv::destroyWindow(name);
 }
+
+//brief:
+class MatchTemplateFactory;
+std::map<int, MatchTemplateFactory*> g_match_dict;
+class MatchTemplateFactory{
+public:
+	MatchTemplateFactory() = default;
+
+	static MatchTemplateFactory* create(int method) {
+		auto iter = g_match_dict.find(method);
+		if (iter == g_match_dict.end())
+			return nullptr;
+		return iter->second;
+	}
+
+	virtual void operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst) = 0;
+};
+//brief:基于差的平方和
+class MatchSqdiff :public MatchTemplateFactory {
+public:
+	void operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst)override;
+};
+class MatchSqdiffNormed :public MatchTemplateFactory {
+public:
+	void operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst)override;
+};
+//brief:基于互相关
+class MatchCcorr:public MatchTemplateFactory {
+public:
+	void operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst)override;
+};
+class MatchCcorrNormed:public MatchTemplateFactory {
+public:
+	void operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst)override;
+};
+//brief:基于互相关系数
+class MatchCcoeff:public MatchTemplateFactory {
+public:
+	void operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst)override;
+};
+class MatchCcoeffNormed:public MatchTemplateFactory {
+public:
+	void operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst)override;
+};
+//brief:基于L1范数(绝对值)
+//becare:本功能并没有被opencv收录到matchTemplate,可以作为一种参考与扩展
+class MatchAbsdiff:public MatchTemplateFactory {
+public:
+	void operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst)override;
+};
+class MatchAbsdiffNormed:public MatchTemplateFactory {
+public:
+	void operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst)override;
+};
+//初始化全局变量
+class GlobalDictInit : public digital::noncopyable {
+public:
+	GlobalDictInit() {
+		g_match_dict.insert({ detail::TM_SQDIFF,new MatchSqdiff });
+		g_match_dict.insert({ detail::TM_SQDIFF_NORMED,new MatchSqdiffNormed });
+
+		g_match_dict.insert({ detail::TM_CCORR,new MatchCcorr});
+		g_match_dict.insert({ detail::TM_CCORR_NORMED,new MatchCcorrNormed });
+
+		g_match_dict.insert({ detail::TM_CCOEFF,new MatchCcoeff});
+		g_match_dict.insert({ detail::TM_CCOEFF_NORMED,new MatchCcoeffNormed});
+
+		g_match_dict.insert({ detail::TM_ABSDIFF,new MatchAbsdiff});
+		g_match_dict.insert({ detail::TM_ABSDIFF_NORMED,new MatchAbsdiffNormed});
+	}
+};
+GlobalDictInit __init_match_dict;//位于匿名空间中，外部不可见
 
 }//!namespace
 
@@ -354,5 +429,314 @@ void overlapHoughImage(cv::InputArray origin, cv::InputArray mask, cv::InputArra
 	}
 }
 
+//brief；
+void matchTemplate(cv::InputArray src, cv::InputArray templ, cv::OutputArray dst, int method) {
+	assert(src.depth() == CV_8U || src.depth() == CV_32F);
+	assert(templ.depth() == CV_8U || templ.depth() == CV_32F);
+
+	cv::Mat in = src.getMat();
+	cv::Mat kernel = templ.getMat();
+	assert(kernel.cols <= in.cols && kernel.rows <= in.rows);
+
+	//becare:这里是少见的采用了VALID卷积的地方
+	dst.create(in.rows - kernel.rows + 1,in.cols - kernel.cols + 1, CV_32FC1);
+	cv::Mat out = dst.getMat();
+
+	auto ptr_implemnet = MatchTemplateFactory::create(method);
+	if (!ptr_implemnet) {
+		dealException(digital::kParameterNotMatch);
+		return;
+	}
+	ptr_implemnet->operator()(in, kernel, out);
+}
 
 }//!namespace detail
+
+namespace {
+
+//brief:该方法的本质就是以L2距离作为评判两幅图像相似性的依据，因此值越小越匹配
+void MatchSqdiff::operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst) {
+	auto start = templ.data;
+	cv::Size size = templ.size();
+	size_t jump = templ.step;
+
+	auto squared_difference = [start, size, jump](uint8_t** arr, uint8_t* cur) {
+		float sum = 0;
+		auto ptr = start;
+		for (int y = 0; y < size.height; ++y) {
+			auto iter = arr[y];
+			for (int x = 0; x < size.width; ++x) {
+				//for test
+				//digital::__printInfo("%u,%u\r\n",*iter,ptr[x]);
+				float tmp = static_cast<float>(fabs(*iter++ - ptr[x]));//L2欧式空间距离
+				sum += tmp * tmp;
+			}
+			ptr += jump;
+		}
+		float* data = reinterpret_cast<float*>(cur);
+		*data = sum;
+	};
+	detail::filter2DNonLinear(src, dst, templ, CV_32F, squared_difference, cv::Point(-1,-1),\
+		cv::BORDER_DEFAULT, detail::VALID);
+}
+
+//brief:在MatchSqdiff基础之上，进行了归一化，从而减少尺寸的敏感性
+void MatchSqdiffNormed::operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst) {
+	auto start = templ.data;
+	cv::Size size = templ.size();
+	size_t jump = templ.step;
+
+	float square_sum = 0.;
+	auto get_square_sum = [&square_sum](uint8_t* cursor) {
+		square_sum += *cursor * *cursor;
+	};
+	detail::grayscaleTransform(templ, get_square_sum);//模板的归一化参数是恒定的
+
+	auto squared_difference = [start, size, square_sum, jump](uint8_t** arr, uint8_t* cur) {
+		double sum = 0.;
+		float win_square_sum = 0.;
+		auto ptr = start;
+		for (int y = 0; y < size.height; ++y) {
+			auto iter = arr[y];
+			for (int x = 0; x < size.width; ++x) {
+				win_square_sum += *iter * *iter;
+				float tmp = static_cast<float>(fabs(*iter++ - ptr[x]));//L2欧式空间距离
+				sum += tmp * tmp;
+			}
+			ptr += jump;
+		}
+		float* data = reinterpret_cast<float*>(cur);
+		*data = static_cast<float>(sum * std::pow(win_square_sum*square_sum, -0.5));//归一化
+	};
+	detail::filter2DNonLinear(src, dst, templ, CV_32F, squared_difference, cv::Point(-1,-1), \
+		cv::BORDER_DEFAULT, detail::VALID);
+}
+
+//brief:该方法的本质就是以两个函数的相关作为评价相似性的标准，因此值越大越匹配
+void MatchCcorr::operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst) {
+	auto start = templ.data;
+	cv::Size size = templ.size();
+	size_t jump = templ.step;
+
+	auto squared_difference = [start, size, jump](uint8_t** arr, uint8_t* cur) {
+		float sum = 0;
+		auto ptr = start;
+		for (int y = 0; y < size.height; ++y) {
+			auto iter = arr[y];
+			for (int x = 0; x < size.width; ++x) {
+				sum += *iter++ * ptr[x];
+			}
+			ptr += jump;
+		}
+		float* data = reinterpret_cast<float*>(cur);
+		*data = sum;
+	};
+	detail::filter2DNonLinear(src, dst, templ, CV_32F, squared_difference, cv::Point(-1,-1),\
+		cv::BORDER_DEFAULT, detail::VALID);
+}
+
+//brief:在cross correlation的基础之上，进行归一化操作，减少尺寸敏感性
+void MatchCcorrNormed::operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst) {
+	auto start = templ.data;
+	cv::Size size = templ.size();
+	size_t jump = templ.step;
+	
+	float square_sum = 0.;
+	auto get_square_sum = [&square_sum](uint8_t* cursor) {
+		square_sum += *cursor * *cursor;
+	};
+	detail::grayscaleTransform(templ, get_square_sum);//模板的归一化参数是恒定的
+
+	auto squared_difference = [start, size, square_sum, jump](uint8_t** arr, uint8_t* cur) {
+		double sum = 0;
+		auto ptr = start;
+		float win_square_sum = 0.;
+
+		for (int y = 0; y < size.height; ++y) {
+			auto iter = arr[y];
+			for (int x = 0; x < size.width; ++x) {
+				win_square_sum += *iter * *iter;
+				sum += *iter++ * ptr[x];
+			}
+			ptr += jump;
+		}
+		float* data = reinterpret_cast<float*>(cur);
+		*data = static_cast<float>(sum * std::pow(win_square_sum*square_sum,-0.5));//归一化
+	};
+	detail::filter2DNonLinear(src, dst, templ, CV_32F, squared_difference, cv::Point(-1,-1),\
+		cv::BORDER_DEFAULT, detail::VALID);
+}
+
+//brief:该方法的本质是将两个图像的相关系数作为评价标准，值越大越匹配
+//becare:实际上在没有进行归一化的时候，实际采用了协方差作为其评价准测，归一化后为相关系数
+//       此时值越接近1越匹配，越接近-1越不匹配
+void MatchCcoeff::operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst) {
+	auto start = templ.data;
+	cv::Size size = templ.size();
+	size_t jump = templ.step;
+	double total = static_cast<double>(templ.total());
+	double total_1 = 1. / total;
+
+	double templ_sum = 0.;
+	auto get_mean= [&templ_sum](uint8_t* cursor) {
+		templ_sum += *cursor;
+	};
+	detail::grayscaleTransform(templ, get_mean);//模板的归一化参数是恒定的
+	double templ_mean = templ_sum * total_1;
+
+	//brief:在一遍遍历中完成均值和协方差的统计
+	auto squared_difference = [start, size, templ_sum, templ_mean, total_1, total, jump]\
+		(uint8_t** arr, uint8_t* cur) {
+		double sum = 0.;
+		double win_sum = 0.;
+		double win_mean = 0.;
+		auto ptr = start;
+
+		//将公式展开后，可以同时统计均值和协方差
+		//double tmp_sum = 0.;
+		//double tmp_mean = 0.;
+		//for (int y = 0; y < size.height; ++y) {
+		//	auto iter = arr[y];
+		//	for (int x = 0; x < size.width; ++x) {
+		//		tmp_sum+= *iter;
+		//	}
+		//}
+		//tmp_mean = tmp_sum * total_1;
+		//double res = 0.;
+		//for (int y = 0; y < size.height; ++y) {
+		//	auto iter = arr[y];
+		//	for (int x = 0; x < size.width; ++x) {
+		//		double ttt = (*iter - tmp_mean)*(ptr[x] - templ_mean);
+		//		res += ttt;
+		//		++iter;
+		//	}
+		//	ptr += jump;
+		//}
+		for (int y = 0; y < size.height; ++y) {
+			auto iter = arr[y];
+			for (int x = 0; x < size.width; ++x) {
+				win_sum += *iter;
+				sum += *iter++ * (ptr[x] - templ_mean);
+			}
+			ptr += jump;
+		}
+		win_mean = win_sum * total_1;
+
+		float* data = reinterpret_cast<float*>(cur);
+		*data = static_cast<float>(sum + win_mean * templ_mean * total - win_mean * templ_sum);
+	};
+	detail::filter2DNonLinear(src, dst, templ, CV_32F, squared_difference, cv::Point(-1,-1),\
+		cv::BORDER_DEFAULT, detail::VALID);
+}
+
+//brief:该方法的本质是将两个图像的相关系数作为评价标准，值越大越匹配
+//becare:实际上在没有进行归一化的时候，实际采用了协方差作为其评价准测，归一化后为相关系数
+//       此时值越接近1越匹配，越接近-1越不匹配
+void MatchCcoeffNormed::operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst) {
+	auto start = templ.data;
+	cv::Size size = templ.size();
+	size_t jump = templ.step;
+	double total = static_cast<double>(templ.total());
+	double total_1 = 1. / total;
+	double templ_sum = 0.;
+	double templ_sigma = 0.;
+	double templ_mean;
+
+	auto get_mean_sigma= [&templ_sum, &templ_sigma](uint8_t* cursor) {
+		templ_sum += *cursor;
+		templ_sigma += *cursor * *cursor;
+	};
+	detail::grayscaleTransform(templ, get_mean_sigma);//模板的归一化参数是恒定的
+	templ_mean = templ_sum * total_1;
+	templ_sigma = templ_sigma + templ_mean * templ_mean * total - 2 * templ_mean * templ_sum;
+
+	//brief:在一遍遍历中完成均值和协方差的统计
+	auto squared_difference = [start, size, templ_sum, templ_mean, templ_sigma, total_1, total, jump]\
+		(uint8_t** arr, uint8_t* cur) {
+		double sum = 0.;
+		double win_sum = 0.;
+		double win_sigma = 0.;
+		double win_mean = 0.;
+		auto ptr = start;
+
+		for (int y = 0; y < size.height; ++y) {
+			auto iter = arr[y];
+			for (int x = 0; x < size.width; ++x) {
+				win_sum += *iter;
+				win_sigma += *iter * *iter;
+				sum += *iter++ * (ptr[x] - templ_mean);
+			}
+			ptr += jump;
+		}
+		win_mean = win_sum * total_1;
+		win_sigma = win_sigma + win_mean * win_mean * total - 2 * win_mean * win_sum;
+		double norm_factor = std::pow(win_sigma * templ_sigma, -0.5);
+
+		float* data = reinterpret_cast<float*>(cur);
+		*data = static_cast<float>((sum + win_mean * templ_mean * total - win_mean * templ_sum) * norm_factor);
+			//std::pow((win_sigma + win_mean * total - 2 * win_mean * win_sum) * templ_sigma, -0.5));
+	};
+	detail::filter2DNonLinear(src, dst, templ, CV_32F, squared_difference, cv::Point(-1,-1),\
+		cv::BORDER_DEFAULT, detail::VALID);
+}
+
+//brief:该方法的本质就是以L1范数作为评判两幅图像相似性的依据，因此值越小越匹配
+void MatchAbsdiff::operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst) {
+	auto start = templ.data;
+	cv::Size size = templ.size();
+	size_t jump = templ.step;
+
+	auto squared_difference = [start, size, jump](uint8_t** arr, uint8_t* cur) {
+		float sum = 0;
+		auto ptr = start;
+		for (int y = 0; y < size.height; ++y) {
+			auto iter = arr[y];
+			for (int x = 0; x < size.width; ++x) {
+				float tmp = static_cast<float>(fabs(*iter++ - ptr[x]));//L1欧式空间距离
+				sum += tmp;//和L2范数的唯一区别
+			}
+			ptr += jump;
+		}
+		float* data = reinterpret_cast<float*>(cur);
+		*data = sum;
+	};
+	detail::filter2DNonLinear(src, dst, templ, CV_32F, squared_difference, cv::Point(-1,-1),\
+		cv::BORDER_DEFAULT, detail::VALID);
+}
+
+//brief:该方法的本质就是以L1范数作为评判两幅图像相似性的依据，因此值越小越匹配
+void MatchAbsdiffNormed::operator()(cv::Mat& src, cv::Mat& templ, cv::Mat& dst) {
+	auto start = templ.data;
+	cv::Size size = templ.size();
+	size_t jump = templ.step;
+	double square_sum = 0.;
+
+	auto get_square_sum = [&square_sum](uint8_t* cursor) {
+		square_sum += *cursor * *cursor;
+	};
+	detail::grayscaleTransform(templ, get_square_sum);//模板的归一化参数是恒定的
+
+	auto squared_difference = [start, size, square_sum, jump](uint8_t** arr, uint8_t* cur) {
+		float sum = 0;
+		double win_square = 0.;
+
+		auto ptr = start;
+		for (int y = 0; y < size.height; ++y) {
+			auto iter = arr[y];
+			for (int x = 0; x < size.width; ++x) {
+				win_square += *iter * *iter;
+				float tmp = static_cast<float>(fabs(*iter++ - ptr[x]));//L1欧式空间距离
+				sum += tmp;//和L2范数的唯一区别
+			}
+			ptr += jump;
+		}
+		float* data = reinterpret_cast<float*>(cur);
+		*data = static_cast<float>(sum * std::pow(win_square * square_sum, -0.5));
+	};
+	detail::filter2DNonLinear(src, dst, templ, CV_32F, squared_difference, cv::Point(-1,-1),\
+		cv::BORDER_DEFAULT, detail::VALID);
+}
+
+
+
+}//!namespace

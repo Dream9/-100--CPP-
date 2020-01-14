@@ -9,10 +9,16 @@
 //#include<memory>
 #include<vector>
 
-//brief:对外隐藏
 namespace detail {
 
 typedef std::function<void(uint8_t**, uint8_t*)> NonlinearOperationType;
+
+//brief:卷积方式
+enum ConvolutionType {
+	FULL = 0,
+	SAME = 1,
+	VALID = 2,
+};
 
 //brief:根据窗口确定sigma大小
 inline double getSigma(int size) {
@@ -326,6 +332,8 @@ void filter2DNonLinear(cv::Mat& src,
 
 //brief:更标准的接口形式
 //     参数参见cv::filter2D
+//     其中convolution_type:卷积计算方式，默认采用SAME卷积，也就是最普遍的实现，在一些运算中(比如模式匹配)，
+//     采用了VALID卷积，因为边界不需要计算
 //becare:op为用户提提供的指定操作，通常完成非线性的变换
 void filter2DNonLinear(cv::Mat& src,
 	cv::Mat& dst,
@@ -334,7 +342,8 @@ void filter2DNonLinear(cv::Mat& src,
 	NonlinearOperationType op,
 	cv::Point anchor = cv::Point(-1, -1),
 	//double delta = 0,
-	int borderType = cv::BORDER_DEFAULT);
+	int borderType = cv::BORDER_DEFAULT,
+	int convolution_type = detail::SAME);
 
 //brief:soble算子的封装
 //parameter: src:目标图像

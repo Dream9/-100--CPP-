@@ -70,15 +70,20 @@ void Solution::show(void** figs, int len, const string& str) {
 	int i = 0;
 	cv::Size size(0, 0);
 	auto type = static_cast<cv::Mat*>(figs[0])->type();
-	while (i < len) {
+	int invalid_pos = len;
+
+	while (i < invalid_pos) {
 
 #ifndef NDEBUG
 		//debug时检查所有的类型匹配
 		cv::Mat* cur = static_cast<cv::Mat*>(figs[i]);
 		if (cur->type() != type) {
-			dealException(kParameterNotMatch);
-			//FIXME: 或者抛出错误？
-			__exit_failure();
+			//dealException(kParameterNotMatch);
+			////FIXME: 或者抛出错误？
+			//__exit_failure();
+			//brief:已调整，对于类型不一致的图像单独窗口展示
+			std::swap(figs[i], figs[--invalid_pos]);
+			continue;
 		}
 #endif
 
@@ -91,10 +96,15 @@ void Solution::show(void** figs, int len, const string& str) {
 
 	int last_cols = 0;
 	i = 0;
-	while (i < len) {
+	while (i < invalid_pos) {
 		cv::Mat* src = static_cast<cv::Mat*>(figs[i]);
 		src->copyTo(dst(cv::Rect(last_cols, 0, src->cols, src->rows)));
 		last_cols += src->cols + 5;
+		++i;
+	}
+	while (i < len) {
+		cv::namedWindow(str + std::to_string(i), cv::WINDOW_NORMAL);
+		cv::imshow(str + std::to_string(i), *static_cast<cv::Mat*>(figs[i]));
 		++i;
 	}
 	
@@ -197,6 +207,7 @@ void __MatrixTest(void* first, void* second) {
 	auto cur_out = out.data;
 
 	for (int i = 0; i < rows; ++i) {
+		std::cout << "第" << i << "行：";
 		for (int j = 0; j < cols; ++j) {
 			for (int c = 0; c < channels; ++c) {
 				__cout_data(depth, cur);

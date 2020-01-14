@@ -127,10 +127,10 @@ void sepConvolution2D(const cv::Mat& src,
 //brief:更标准的形式
 //becare:关于类型分发，由调用者传入的op负责分发
 void filter2DNonLinear(cv::Mat& src, cv::Mat& dst, cv::Mat& kernel, int ddepth, NonlinearOperationType op,
-	cv::Point anchor, int borderType) {
+	cv::Point anchor, int borderType, int convolution_type) {
 	cv::Size ksize = kernel.size();
-	anchor.x = anchor.x == -1 ? (ksize.width >> 1) : anchor.x;
-	anchor.y = anchor.y == -1 ? (ksize.height >> 1) : anchor.y;
+	anchor.x = anchor.x == -1 ? (((ksize.width + 1) >> 1) - 1): anchor.x;
+	anchor.y = anchor.y == -1 ? (((ksize.height + 1)>> 1) - 1) : anchor.y;
 
 	//becare:这里要求锚点始终位于内部
 	assert(anchor.x < ksize.width && anchor.x >= 0);
@@ -140,12 +140,25 @@ void filter2DNonLinear(cv::Mat& src, cv::Mat& dst, cv::Mat& kernel, int ddepth, 
 	int offset_l = anchor.x;
 	int offset_r = ksize.width - anchor.x - 1;
 
-	cv::Size ssize = src.size();
-	dst = cv::Mat(ssize, CV_MAKETYPE(ddepth, src.channels()));
-
-	//扩展边界
 	cv::Mat data;
-	cv::copyMakeBorder(src, data, offset_t, offset_b, offset_l, offset_r, borderType);
+	cv::Size ssize;
+
+	if (detail::SAME == convolution_type) {
+		//same卷积
+		ssize = src.size();
+		cv::copyMakeBorder(src, data, offset_t, offset_b, offset_l, offset_r, borderType);
+	}
+	else if(detail::VALID == convolution_type) {
+		//valid 卷积
+		ssize.width = src.cols - ksize.width + 1;
+		ssize.height = src.rows - ksize.height + 1;
+		data = src.clone();//FIXME:or not clone?
+	}
+	else {
+		coutInfo("FULL卷积暂时没有实现");
+		return;
+	}
+	dst.create(ssize, CV_MAKETYPE(ddepth, src.channels()));
 
 	//滤波运算
 	auto cur = dst.data;
@@ -170,7 +183,6 @@ void filter2DNonLinear(cv::Mat& src, cv::Mat& dst, cv::Mat& kernel, int ddepth, 
 
 				arr_dst[x] = iter;
 				iter += kStep;
-				
 			}
 
 			//调用用户例程

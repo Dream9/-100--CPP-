@@ -4,16 +4,13 @@
 #include"Solution/grayscale_transfrom.h"
 #include"Solution/type_extension.h"
 
-
-
-#include"Solution/solution.h"
-#include<opencv2/highgui.hpp>
-
-
-
 #include<unordered_map>
 #include<map>
 #include<numeric>
+
+//for test
+//#include"Solution/solution.h"
+//#include<opencv2/highgui.hpp>
 
 #define OUT_RANGE(x,y,width,height) (x<0 || y<0 || x>=width || y>=height)
 
