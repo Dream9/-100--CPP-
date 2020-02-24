@@ -21,6 +21,49 @@ void __dfs(cv::Mat& src, cv::Mat& dst, double lower, int row, int column);
 
 namespace detail {
 
+//brief:三角函数arctan的封装
+//      对y,x矩阵逐位计算对应的arctan2(y,x)
+//parameter:
+void cvArctan2(cv::InputArray dy, cv::InputArray dx, cv::OutputArray dst) {
+	assert(dx.size() == dy.size());
+	assert(dx.type() == dy.type());
+	assert(dx.depth() == CV_32F);//FIXME:目前只针对CV_32F做了扩展
+
+	cv::Mat x = dx.getMat();
+	cv::Mat y = dy.getMat();
+	dst.create(x.size(), CV_MAKETYPE(CV_32F, x.channels()));
+	cv::Mat angle = dst.getMat();
+
+	cv::Size size = x.size();
+	int channels = x.channels();
+	size_t xstep = x.step;
+	size_t ystep = y.step;
+	size.width *= channels;
+	if (x.isContinuous() && y.isContinuous()) {
+		size.width *= size.height;
+		size.height = 1;
+	}
+
+	auto xiter = reinterpret_cast<float*>(x.data);
+	auto yiter = reinterpret_cast<float*>(y.data);
+	float* cur = static_cast<float*>(static_cast<void*>(angle.data));//or reinterpret_cast
+	for (int y = 0; y < size.height; ++y) {
+		auto xcur = xiter;
+		auto ycur = yiter;
+		for (int x = 0; x < size.width; ++x) {
+			*cur = atan2f(float(*ycur), float(*xcur));
+
+			if (x == 128)
+				int i = 0;
+			++cur;
+			++xcur;
+			++ycur;
+		}
+		xiter += xstep;
+		yiter += ystep;
+	}
+}
+
 static std::default_random_engine __global_eng;
 static std::normal_distribution<> __global_dis(1, 1);
 //brief:返回服从正态分布的随机数，E = 1 , D = 1

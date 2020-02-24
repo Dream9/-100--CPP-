@@ -34,6 +34,16 @@ inline int getWinSize(double sigma) {
 	return static_cast<int>((sigma * 3) * 0.5 + 1);
 }
 
+//brief:三角函数的封装
+//parameter:dy:y坐标值
+//          dx：x坐标值
+//          dst：存储位置，输出float类型弧度
+//becare:目前只做了输入数据dx,dy为CV_32F的扩展
+void cvArctan2(cv::InputArray dy, 
+	cv::InputArray dx, 
+	cv::OutputArray dst);
+
+
 //brief:获得均值为1，方差为1的随机数
 double randNorm();
 
