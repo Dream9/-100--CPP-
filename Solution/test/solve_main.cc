@@ -413,6 +413,12 @@ int main(int argc, char** argv) {
 	Solve(tn063);
 #endif
 
+#if (defined NO_066) || (defined NO_067) || (defined NO_068)
+	Hog hg066("imori.jpg",
+		true);
+	Solve(hg066);
+#endif
+
 	return 0;
 }
 

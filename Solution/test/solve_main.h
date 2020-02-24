@@ -4,7 +4,7 @@
 #include"Solution/solution.h"
 
 
-#define NO_055
+#define NO_066
 
 #ifdef NO_001
 #include"Solution/001-010/channel_swap.h"
@@ -165,6 +165,9 @@
 #include"Solution/061-070/thin.h"
 #endif
 
+#if (defined NO_066) || (defined NO_067) || (defined NO_068)
+#include"Solution/061-070/hog.h"
+#endif
 
 
 #endif // _SOLUTION_SOLVE_MAIN_H_
